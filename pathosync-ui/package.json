@@ -36,6 +36,7 @@
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-tooltip": "^1.2.8",
     "class-variance-authority": "^0.7.1",
+    "hono": "^4.9.10",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.544.0",
     "motion": "^12.23.22",
