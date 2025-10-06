@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PathoSync - Choose Your Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+        }
+        
+        .portals {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        @media (max-width: 600px) {
+            .portals {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .portal-card {
+            background: #f8f9ff;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 30px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .portal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-color: #667eea;
+        }
+        
+        .portal-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            color: white;
+            font-size: 24px;
+        }
+        
+        .portal-card h3 {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .portal-card p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .portal-features {
+            list-style: none;
+            text-align: left;
+        }
+        
+        .portal-features li {
+            color: #555;
+            padding: 5px 0;
+            position: relative;
+            padding-left: 20px;
+        }
+        
+        .portal-features li:before {
+            content: "✓";
+            color: #10b981;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+        
+        .footer {
+            color: #888;
+            font-size: 0.9rem;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🏥</div>
+        <h1>PathoSync</h1>
+        <p class="subtitle">Choose your portal to get started</p>
+        
+        <div class="portals">
+            <a href="?mode=clinic" class="portal-card">
+                <div class="portal-icon">🧪</div>
+                <h3>Clinic Portal</h3>
+                <p>Complete laboratory management system for healthcare providers</p>
+                <ul class="portal-features">
+                    <li>Patient Management</li>
+                    <li>Test Management</li>
+                    <li>Billing & Reports</li>
+                    <li>WhatsApp Integration</li>
+                    <li>Print & Share</li>
+                </ul>
+                <div class="btn">Access Clinic Portal</div>
+            </a>
+            
+            <a href="?mode=saas" class="portal-card">
+                <div class="portal-icon">🌐</div>
+                <h3>SaaS Portal</h3>
+                <p>Multi-tenant management system for laboratory chains and administrators</p>
+                <ul class="portal-features">
+                    <li>Client Management</li>
+                    <li>Subscription Billing</li>
+                    <li>Usage Analytics</li>
+                    <li>Revenue Tracking</li>
+                    <li>Bulk Operations</li>
+                </ul>
+                <div class="btn">Access SaaS Portal</div>
+            </a>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Clinic Portal:</strong> Perfect for individual clinics, small labs, and healthcare providers</p>
+            <p><strong>SaaS Portal:</strong> Designed for administrators managing multiple laboratory clients</p>
+            <br>
+            <p>© 2024 PathoSync Technologies. Built for the Indian Healthcare Market.</p>
+        </div>
+    </div>
+    
+    <script>
+        // Auto-redirect based on URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode');
+        
+        if (mode === 'clinic') {
+            // Redirect to main app
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1000);
+        } else if (mode === 'saas') {
+            // The router will handle SaaS mode
+            setTimeout(() => {
+                window.location.href = '/?mode=saas';
+            }, 1000);
+        }
+        
+        // Add click analytics (optional)
+        document.querySelectorAll('.portal-card').forEach(card => {
+            card.addEventListener('click', (e) => {
+                const portalType = e.currentTarget.href.includes('saas') ? 'SaaS' : 'Clinic';
+                console.log(`User selected ${portalType} Portal`);
+                // You can add analytics tracking here
+            });
+        });
+    </script>
+</body>
+</html>

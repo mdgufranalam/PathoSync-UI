@@ -1,0 +1,211 @@
+{
+  "name": "PathoSync SaaS Portal",
+  "version": "1.0.0",
+  "description": "Multi-tenant SaaS management portal for laboratory management systems",
+  "main": "SaaSApp.tsx",
+  "deployment": {
+    "type": "standalone",
+    "domains": [
+      "admin.pathosync.com",
+      "portal.pathosync.com",
+      "saas.pathosync.com"
+    ],
+    "environment": "production",
+    "ssl": true,
+    "cdn": true
+  },
+  "database": {
+    "type": "postgresql",
+    "multiTenant": true,
+    "schema": "saas_portal",
+    "connectionPool": {
+      "min": 5,
+      "max": 20
+    }
+  },
+  "features": {
+    "clientManagement": true,
+    "subscriptionBilling": true,
+    "usageAnalytics": true,
+    "bulkOperations": true,
+    "apiAccess": true,
+    "customBranding": true,
+    "multiLocation": true,
+    "whatsappIntegration": true,
+    "smsIntegration": true,
+    "emailIntegration": true,
+    "paymentGateway": true,
+    "gstCompliance": true,
+    "auditLogging": true
+  },
+  "subscriptionPlans": {
+    "basic": {
+      "price": 2999,
+      "currency": "INR",
+      "billingCycle": "monthly",
+      "limits": {
+        "users": 5,
+        "patients": 1000,
+        "testsPerMonth": 500,
+        "storage": "1GB",
+        "apiCalls": 1000
+      },
+      "features": [
+        "WhatsApp Reports",
+        "SMS Alerts",
+        "Basic Analytics"
+      ]
+    },
+    "standard": {
+      "price": 7999,
+      "currency": "INR",
+      "billingCycle": "monthly",
+      "limits": {
+        "users": 10,
+        "patients": 5000,
+        "testsPerMonth": 2000,
+        "storage": "5GB",
+        "apiCalls": 5000
+      },
+      "features": [
+        "WhatsApp Reports",
+        "SMS Alerts",
+        "Email Reports",
+        "Advanced Analytics"
+      ]
+    },
+    "premium": {
+      "price": 15999,
+      "currency": "INR",
+      "billingCycle": "monthly",
+      "limits": {
+        "users": 20,
+        "patients": 10000,
+        "testsPerMonth": 5000,
+        "storage": "20GB",
+        "apiCalls": 10000
+      },
+      "features": [
+        "WhatsApp Reports",
+        "SMS Alerts",
+        "Email Reports",
+        "Advanced Analytics",
+        "API Access",
+        "Custom Branding"
+      ]
+    },
+    "enterprise": {
+      "price": 49999,
+      "currency": "INR",
+      "billingCycle": "monthly",
+      "limits": {
+        "users": 50,
+        "patients": 50000,
+        "testsPerMonth": 20000,
+        "storage": "100GB",
+        "apiCalls": 50000
+      },
+      "features": [
+        "All Features",
+        "Priority Support",
+        "Custom Integrations",
+        "Dedicated Account Manager"
+      ]
+    }
+  },
+  "integrations": {
+    "payment": {
+      "razorpay": {
+        "enabled": true,
+        "keyId": "${RAZORPAY_KEY_ID}",
+        "webhook": "/webhooks/razorpay"
+      },
+      "upi": {
+        "enabled": true,
+        "merchantId": "${UPI_MERCHANT_ID}"
+      }
+    },
+    "communication": {
+      "whatsapp": {
+        "enabled": true,
+        "businessAccountId": "${WHATSAPP_BUSINESS_ACCOUNT_ID}",
+        "accessToken": "${WHATSAPP_ACCESS_TOKEN}"
+      },
+      "sms": {
+        "provider": "textlocal",
+        "apiKey": "${SMS_API_KEY}",
+        "senderId": "PATHOSYNC"
+      },
+      "email": {
+        "provider": "sendgrid",
+        "apiKey": "${SENDGRID_API_KEY}",
+        "fromEmail": "noreply@pathosync.com"
+      }
+    },
+    "government": {
+      "gst": {
+        "enabled": true,
+        "apiEndpoint": "${GST_API_ENDPOINT}",
+        "apiKey": "${GST_API_KEY}"
+      },
+      "aadhaar": {
+        "enabled": true,
+        "apiEndpoint": "${AADHAAR_API_ENDPOINT}",
+        "apiKey": "${AADHAAR_API_KEY}"
+      }
+    }
+  },
+  "security": {
+    "multiTenantIsolation": true,
+    "dataEncryption": true,
+    "auditLogging": true,
+    "rateLimiting": {
+      "enabled": true,
+      "requestsPerMinute": 60,
+      "requestsPerHour": 1000
+    },
+    "cors": {
+      "enabled": true,
+      "allowedOrigins": [
+        "https://pathosync.com",
+        "https://*.pathosync.com"
+      ]
+    }
+  },
+  "monitoring": {
+    "uptime": true,
+    "performance": true,
+    "errorTracking": true,
+    "analytics": true,
+    "alerts": {
+      "email": "admin@pathosync.com",
+      "slack": "${SLACK_WEBHOOK_URL}"
+    }
+  },
+  "backup": {
+    "enabled": true,
+    "frequency": "daily",
+    "retention": "30 days",
+    "storage": "aws-s3"
+  },
+  "scaling": {
+    "autoScaling": true,
+    "minInstances": 2,
+    "maxInstances": 10,
+    "targetCPU": "70%",
+    "targetMemory": "80%"
+  },
+  "cache": {
+    "redis": {
+      "enabled": true,
+      "ttl": 3600,
+      "maxMemory": "256MB"
+    }
+  },
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "retention": "90 days",
+    "exports": ["cloudwatch", "elasticsearch"]
+  }
+}

@@ -1,13 +1,96 @@
 <!doctype html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/healthcare-icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>pathosync-ui</title>
-  </head>
-  <body>
+    <meta name="description" content="Comprehensive healthcare laboratory test management SaaS platform with multi-tenancy, collection centers, and Indian healthcare compliance" />
+    <meta name="keywords" content="healthcare, laboratory, test management, SaaS, multi-tenant, Indian healthcare, collection centers, billing" />
+    <meta name="author" content="Healthcare SaaS Platform" />
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#030213" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Healthcare SaaS" />
+
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Healthcare SaaS Platform" />
+    <meta property="og:description" content="Comprehensive healthcare laboratory test management platform" />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:url" content="https://healthcare-saas.com" />
+
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Healthcare SaaS Platform" />
+    <meta name="twitter:description" content="Comprehensive healthcare laboratory test management platform" />
+    <meta name="twitter:image" content="/twitter-image.png" />
+
+    <title>Healthcare SaaS Platform - Laboratory Test Management</title>
+
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin />
+
+    <!-- Critical CSS (inline for performance) -->
+    <style>
+        /* Critical loading styles */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Hide loading screen once app loads */
+        .app-loaded .loading-screen {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loading-screen">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <!-- App Root -->
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+    <!-- App Entry Point -->
+    <script type="module" src="/main.tsx"></script>
+
+    <!-- Remove loading screen once app loads -->
+    <script>window.addEventListener('load', () => {
+        setTimeout(() => {
+          document.body.classList.add('app-loaded');
+        }, 500);
+      });</script>
+</body>
 </html>
