@@ -107,8 +107,12 @@ export function ReportDetails({ reportId, onBack, bill, onUpdateBill }: ReportDe
             let patientAge = 25; // default age
             if (bill.patient?.dateOfBirth) {
                 try {
-                    patientAge = new Date().getFullYear() - new Date(bill.patient.dateOfBirth).getFullYear();
+                    const birthDate = new Date(bill.patient.dateOfBirth);
+                    if (!isNaN(birthDate.getTime())) {
+                        patientAge = new Date().getFullYear() - birthDate.getFullYear();
+                    }
                 } catch (e) {
+                    console.error('Error calculating age:', e);
                     patientAge = 25; // fallback
                 }
             }
@@ -1034,7 +1038,17 @@ export function ReportDetails({ reportId, onBack, bill, onUpdateBill }: ReportDe
                             </div>
                             <div>
                                 <Label className="text-sm text-gray-500">Report Date</Label>
-                                <p className="font-medium">{format(new Date(report.lastUpdated), 'M/d/yyyy h:mm a')}</p>
+                                <p className="font-medium">{(() => {
+                                    try {
+                                        const date = new Date(report.lastUpdated);
+                                        if (isNaN(date.getTime())) {
+                                            return new Date().toLocaleString();
+                                        }
+                                        return format(date, 'M/d/yyyy h:mm a');
+                                    } catch (e) {
+                                        return new Date().toLocaleString();
+                                    }
+                                })()}</p>
                             </div>
                             <div>
                                 <Label className="text-sm text-gray-500">Report ID</Label>

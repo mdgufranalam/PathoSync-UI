@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { AuthProvider } from './hooks/useAuth';
-import { BillsProvider } from './hooks/useBills';
+import { BillsProvider } from './hooks/useBills.tsx';
 import { ThemeProvider } from './hooks/useTheme';
 import { LoginPage } from './components/LoginPage';
 import ErrorBoundary from './components/ErrorBoundary';

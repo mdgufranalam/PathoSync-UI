@@ -115,7 +115,7 @@ class ApiClient {
     try {
       // Mock refresh token API call
       const response = await this.mockRefreshToken(tokens.refreshToken);
-      
+    
       if (response.success && response.tokens) {
         // Update stored tokens
         localStorage.setItem('healthcareSaas_tokens', JSON.stringify(response.tokens));

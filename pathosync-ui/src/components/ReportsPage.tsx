@@ -36,13 +36,37 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { GlobalPrintManager } from './GlobalPrintManager';
 
-// Using built-in date formatting instead of date-fns
+// Using built-in date formatting instead of date-fns with validation
 const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-        month: 'short',
-        day: '2-digit',
-        year: 'numeric'
-    });
+    try {
+        if (!dateString) {
+            return new Date().toLocaleDateString('en-US', {
+                month: 'short',
+                day: '2-digit',
+                year: 'numeric'
+            });
+        }
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+            return new Date().toLocaleDateString('en-US', {
+                month: 'short',
+                day: '2-digit',
+                year: 'numeric'
+            });
+        }
+        return date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric'
+        });
+    } catch (e) {
+        console.error('Error formatting date:', e, dateString);
+        return new Date().toLocaleDateString('en-US', {
+            month: 'short',
+            day: '2-digit',
+            year: 'numeric'
+        });
+    }
 };
 
 interface TestResult {
@@ -94,44 +118,79 @@ export function ReportsPage() {
 
     // Convert bills to lab reports format
     const convertBillsToReports = (bills: Bill[]): LabReport[] => {
-        return bills.filter(bill => bill.patient && bill.doctor).map(bill => ({
-            id: bill.id,
-            reportNo: bill.id.replace('BILL-', 'LAB-'),
-            patientName: bill.patient?.name || bill.patientName || 'Unknown Patient',
-            patientAge: bill.patient?.dateOfBirth
-                ? new Date().getFullYear() - new Date(bill.patient.dateOfBirth).getFullYear()
-                : 0,
-            patientGender: bill.patient?.gender
-                ? bill.patient.gender.charAt(0).toUpperCase() + bill.patient.gender.slice(1)
-                : 'Unknown',
-            doctorName: bill.doctor?.name || bill.doctorName || 'Unknown Doctor',
-            date: bill.sampleDate || (bill.createdAt ? bill.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]),
-            testResults: bill.testResults?.map(tr => {
-                const test = bill.tests?.find(t => t.testId === tr.testId);
-                return {
-                    testName: test?.test?.testName || test?.test?.name || 'Unknown Test',
-                    result: tr.result || '',
-                    referenceRange: test?.test?.referenceRanges?.[0]
-                        ? `${test.test.referenceRanges[0].minValue}-${test.test.referenceRanges[0].maxValue} ${test.test.referenceRanges[0].unit}`
-                        : '',
-                    unit: test?.test?.unit || '',
-                    status: tr.isAbnormal ? 'High' : 'Normal' as 'Normal' | 'High' | 'Low' | 'Critical'
-                };
-            }) || [],
-            status: bill.reportStatus || 'Initial',
-            reportType: 'Normal' as 'Normal' | 'Descriptive' | 'Group',
-            technician: 'Tech. Admin',
-            verifiedBy: 'Dr. Lab Head',
-            remarks: bill.clinicalRemarks || '',
-            clinicalHistory: bill.notes || '',
-            priority: 'Normal',
-            specimenType: 'Blood',
-            collectionTime: bill.sampleTime || '09:00',
-            receivedTime: bill.sampleTime || '09:00',
-            reportTime: bill.sampleTime || '09:00',
-            createdBy: 'Dr. Admin',
-            lastUpdated: bill.updatedAt ? bill.updatedAt.split('T')[0] : new Date().toISOString().split('T')[0]
-        }));
+        return bills.filter(bill => bill.patient && bill.doctor).map(bill => {
+            // Safe age calculation
+            let patientAge = 0;
+            try {
+                if (bill.patient?.dateOfBirth) {
+                    const birthDate = new Date(bill.patient.dateOfBirth);
+                    if (!isNaN(birthDate.getTime())) {
+                        patientAge = new Date().getFullYear() - birthDate.getFullYear();
+                    }
+                }
+            } catch (e) {
+                console.error('Error calculating age:', e);
+            }
+
+            // Safe date handling  
+            let reportDate = new Date().toISOString().split('T')[0];
+            try {
+                if (bill.sampleDate) {
+                    reportDate = bill.sampleDate;
+                } else if (bill.createdAt) {
+                    reportDate = bill.createdAt.split('T')[0];
+                }
+            } catch (e) {
+                console.error('Error handling date:', e);
+            }
+
+            // Safe lastUpdated handling
+            let lastUpdated = new Date().toISOString().split('T')[0];
+            try {
+                if (bill.updatedAt) {
+                    lastUpdated = bill.updatedAt.split('T')[0];
+                }
+            } catch (e) {
+                console.error('Error handling lastUpdated:', e);
+            }
+
+            return {
+                id: bill.id,
+                reportNo: bill.id.replace('BILL-', 'LAB-'),
+                patientName: bill.patient?.name || bill.patientName || 'Unknown Patient',
+                patientAge,
+                patientGender: bill.patient?.gender
+                    ? bill.patient.gender.charAt(0).toUpperCase() + bill.patient.gender.slice(1)
+                    : 'Unknown',
+                doctorName: bill.doctor?.name || bill.doctorName || 'Unknown Doctor',
+                date: reportDate,
+                testResults: bill.testResults?.map(tr => {
+                    const test = bill.tests?.find(t => t.testId === tr.testId);
+                    return {
+                        testName: test?.test?.testName || test?.test?.name || 'Unknown Test',
+                        result: tr.result || '',
+                        referenceRange: test?.test?.referenceRanges?.[0]
+                            ? `${test.test.referenceRanges[0].minValue}-${test.test.referenceRanges[0].maxValue} ${test.test.referenceRanges[0].unit}`
+                            : '',
+                        unit: test?.test?.unit || '',
+                        status: tr.isAbnormal ? 'High' : 'Normal' as 'Normal' | 'High' | 'Low' | 'Critical'
+                    };
+                }) || [],
+                status: bill.reportStatus || 'Initial',
+                reportType: 'Normal' as 'Normal' | 'Descriptive' | 'Group',
+                technician: 'Tech. Admin',
+                verifiedBy: 'Dr. Lab Head',
+                remarks: bill.clinicalRemarks || '',
+                clinicalHistory: bill.notes || '',
+                priority: 'Normal',
+                specimenType: 'Blood',
+                collectionTime: bill.sampleTime || '09:00',
+                receivedTime: bill.sampleTime || '09:00',
+                reportTime: bill.sampleTime || '09:00',
+                createdBy: 'Dr. Admin',
+                lastUpdated
+            };
+        });
     };
 
     // Safety check for bills loading
