@@ -22,19 +22,14 @@ export function ReportDownloadPage() {
       );
 
       const blob = new Blob([response.data], { type: 'application/pdf' });
-      const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.download = `report-${reportId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const pdfUrl = window.URL.createObjectURL(blob);
+      window.open(pdfUrl, '_blank');
 
-      setMessage('Report downloaded successfully!');
+      setMessage('Report opened in a new tab.');
 
-    } catch (error) {
+    } catch (error: any) {
         if (error.response && error.response.data) {
             try {
-                // The error response might be a blob, so we need to read it as text
                 const errorText = await error.response.data.text();
                 const errorJson = JSON.parse(errorText);
                 setMessage(errorJson.message || 'An unexpected error occurred.');
@@ -70,7 +65,7 @@ export function ReportDownloadPage() {
             </CardContent>
             <CardFooter>
                 <Button onClick={handleDownload} disabled={isLoading || !mobileNumber} className="w-full">
-                    {isLoading ? 'Downloading...' : 'Download Report'}
+                    {isLoading ? 'Opening...' : 'Open Report'}
                 </Button>
             </CardFooter>
         </Card>

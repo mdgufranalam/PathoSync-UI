@@ -1,42 +1,37 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { AuthProvider, useAuth } from './hooks/useAuth.tsx';
-import { BillsProvider } from './hooks/useBills.tsx';
+import { AuthProvider, useAuth } from './hooks/useAuth';
+import { BillsProvider } from './hooks/useBills';
 import { ThemeProvider } from './hooks/useTheme';
 import { LoginPage } from './components/LoginPage';
 import { SignUpPage } from './components/SignUpPage';
 import { PasswordResetPage } from './components/PasswordResetPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Dashboard } from './components/Dashboard';
-import { BillingProcess, BillingProcessProps } from './components/BillingProcess';
-import { EnhancedBillingProcess, EnhancedBillingProcessProps } from './components/EnhancedBillingProcess';
+import { BillingProcess } from './components/BillingProcess';
+import { EnhancedBillingProcess } from './components/EnhancedBillingProcess';
 import { BillsManagement } from './components/BillsManagement';
 import { PatientsManagement } from './components/PatientsManagement';
 import { TestPackagesManagement } from './components/TestPackagesManagement';
 import { ReportsPage } from './components/ReportsPage';
-import { ReportDownloadPage } from './pages/ReportDownload.tsx';
+import { ReportDownloadPage } from './pages/ReportDownload';
 import { TestsManagement } from './components/TestsManagement';
 import { DoctorsManagement } from './components/DoctorsManagement';
 import { UserManagement } from './components/UserManagement';
-import { UserProfile, UserProfileProps } from './components/UserProfile';
+import { UserProfile } from './components/UserProfile';
 import { Statistics } from './components/Statistics';
 import { SubscriptionManagement } from './components/SubscriptionManagement';
-import { NotificationCenter } from './components/NotificationCenter.jsx';
+import { NotificationCenter } from './components/NotificationCenter';
 import { CollectionCentersManagement } from './components/CollectionCentersManagement';
-import { UpgradePlan, UpgradePlanProps } from './components/UpgradePlan';
+import { UpgradePlan } from './components/UpgradePlan';
 import { ThemeToggle } from './components/ThemeToggle';
 import SaaSPortal from './components/SaaSPortal';
-import { apiClient } from './utils/apiClient';
 import { SupabaseAuthService } from './services/auth';
-import type { User, Permissions } from './types';
-
+import type { User, Page, Role } from './types';
 import { Button } from './components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './components/ui/dropdown-menu';
-import { Menu, User as UserIcon, Settings, LogOut } from 'lucide-react';
+import { Menu, User as UserIcon } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
-import { usePermissions } from './hooks/usePermissions';
-import type { Role } from './types/permissions';
-
-export type Page = 'login' | 'signup' | 'password-reset' | 'dashboard' | 'billing' | 'enhanced-billing' | 'bills' | 'patients' | 'packages' | 'reports' | 'report-download' | 'tests' | 'doctors' | 'users' | 'profile' | 'statistics' | 'subscription' | 'notifications' | 'collection-centers' | 'upgrade-plan' | 'saas-portal' | 'settings';
+import { usePermissions, Permissions } from './hooks/usePermissions';
 
 function AppContent() {
     const [currentPage, setCurrentPage] = useState<Page>('login');
@@ -49,7 +44,7 @@ function AppContent() {
     useEffect(() => {
         const path = window.location.pathname;
         if (path.startsWith('/reportdownload')) {
-            setCurrentPage('report-download');
+            setCurrentPage('reports');
             return;
         }
 
@@ -72,7 +67,6 @@ function AppContent() {
             setCurrentPage('dashboard');
         } catch (error) {
             console.error('Login failed:', error);
-            // Handle login error (e.g., show a notification)
         }
     };
 
@@ -110,9 +104,9 @@ function AppContent() {
             case 'dashboard':
                 return <Dashboard onNavigate={onNavigate} user={currentUser as User} />;
             case 'billing':
-                return <BillingProcess onNavigate={onNavigate} onBack={() => onNavigate('dashboard')} />;
+                return <BillingProcess onNavigate={onNavigate} />;
             case 'enhanced-billing':
-                return <EnhancedBillingProcess onNavigate={onNavigate} onBack={() => onNavigate('dashboard')} />;
+                return <EnhancedBillingProcess onNavigate={onNavigate} onBack={() => setCurrentPage('billing')} />;
             case 'bills':
                 return <BillsManagement />;
             case 'patients':
@@ -154,17 +148,17 @@ function AppContent() {
                     <nav>
                         <ul>
                             <li><Button variant="ghost" onClick={() => setCurrentPage('dashboard')}>Dashboard</Button></li>
-                            {(permissions as Permissions).billing.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('billing')}>Billing</Button></li>}
-                            {(permissions as Permissions).bills.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('bills')}>Bills</Button></li>}
-                            {(permissions as Permissions).patients.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('patients')}>Patients</Button></li>}
-                            {(permissions as Permissions).packages.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('packages')}>Test Packages</Button></li>}
-                            {(permissions as Permissions).reports.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('reports')}>Reports</Button></li>}
-                            {(permissions as Permissions).tests.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('tests')}>Tests</Button></li>}
-                            {(permissions as Permissions).doctors.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('doctors')}>Doctors</Button></li>}
-                            {(permissions as Permissions).users.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('users')}>Users</Button></li>}
-                            {(permissions as Permissions).statistics.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('statistics')}>Statistics</Button></li>}
-                            {(permissions as Permissions).subscription.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('subscription')}>Subscription</Button></li>}
-                            {(permissions as Permissions).collectionCenters.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('collection-centers')}>Collection Centers</Button></li>}
+                            {permissions.billing?.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('billing')}>Billing</Button></li>}
+                            {permissions.bills?.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('bills')}>Bills</Button></li>}
+                            {permissions.patients?.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('patients')}>Patients</Button></li>}
+                            {permissions.packages?.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('packages')}>Test Packages</Button></li>}
+                            {permissions.reports?.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('reports')}>Reports</Button></li>}
+                            {permissions.tests?.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('tests')}>Tests</Button></li>}
+                            {permissions.doctors?.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('doctors')}>Doctors</Button></li>}
+                            {permissions.users?.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('users')}>Users</Button></li>}
+                            {permissions.statistics?.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('statistics')}>Statistics</Button></li>}
+                            {permissions.subscription?.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('subscription')}>Subscription</Button></li>}
+                            {permissions.collectionCenters?.canView && <li><Button variant="ghost" onClick={() => setCurrentPage('collection-centers')}>Collection Centers</Button></li>}
                         </ul>
                     </nav>
                 </aside>

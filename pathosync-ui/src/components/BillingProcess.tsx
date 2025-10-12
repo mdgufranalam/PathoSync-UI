@@ -12,7 +12,7 @@ import { ArrowLeft, ArrowRight, Search, X, Plus, Minus } from 'lucide-react';
 import { mockTestsAPI, mockTestsData } from '../utils/mockTestsAPI';
 import { useBills } from '../hooks/useBills';
 import { toast } from 'sonner';
-import { Page } from '../App';
+import { Page } from '../types';
 
 export interface BillingProcessProps {
   onNavigate: (page: Page) => void;

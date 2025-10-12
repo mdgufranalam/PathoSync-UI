@@ -26,12 +26,12 @@
     /* Path mapping */
     "baseUrl": ".",
     "paths": {
-      "@/*": [ "./*" ],
-      "@/components/*": [ "./components/*" ],
-      "@/hooks/*": [ "./hooks/*" ],
-      "@/utils/*": [ "./utils/*" ],
-      "@/types/*": [ "./types/*" ],
-      "@/styles/*": [ "./styles/*" ]
+      "@/*": [ "./src/*" ],
+      "@/components/*": [ "./src/components/*" ],
+      "@/hooks/*": [ "./src/hooks/*" ],
+      "@/utils/*": [ "./src/utils/*" ],
+      "@/types/*": [ "./src/types/*" ],
+      "@/styles/*": [ "./src/styles/*" ]
     },
 
     /* Additional options */
@@ -45,10 +45,10 @@
     "types": [ "vite/client", "node" ]
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "**/*.js",
-    "**/*.jsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.js",
+    "src/**/*.jsx",
     "vite.config.ts"
   ],
   "exclude": [
