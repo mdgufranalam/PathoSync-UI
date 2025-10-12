@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "@supabase/supabase-js": "^2.75.0",
+    "multer": "^2.0.2",
+    "puppeteer": "^24.24.0",
+    "qrcode": "^1.5.4",
+    "razorpay": "^2.9.6",
+    "shortid": "^2.2.17",
+    "twilio": "^5.10.2"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.5"
+  }
+}

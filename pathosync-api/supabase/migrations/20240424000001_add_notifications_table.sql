@@ -1,0 +1,9 @@
+
+CREATE TABLE notifications (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID REFERENCES users(id),
+  type TEXT NOT NULL,
+  data JSONB,
+  is_read BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

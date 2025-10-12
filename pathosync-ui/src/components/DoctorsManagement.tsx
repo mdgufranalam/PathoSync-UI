@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Doctor } from '../types';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -7,35 +7,29 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Badge } from './ui/badge';
 import { Edit, Trash2, Plus, Search } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
+import { apiClient } from '../utils/apiClient';
+import { usePermissions } from '../hooks/usePermissions';
+import { Role } from '../types/permissions';
 
-export function DoctorsManagement() {
-  const { hasPermission } = useAuth();
-  const [doctors, setDoctors] = useState<Doctor[]>([
-    {
-      id: '1',
-      name: 'Dr. John Smith',
-      specialization: 'Cardiology',
-      email: 'john.smith@healthcare.com',
-      phone: '+1-234-567-8901',
-      licenseNumber: 'MD-12345',
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z'
-    },
-    {
-      id: '2',
-      name: 'Dr. Sarah Johnson',
-      specialization: 'Neurology',
-      email: 'sarah.johnson@healthcare.com',
-      phone: '+1-234-567-8902',
-      licenseNumber: 'MD-12346',
-      isActive: true,
-      createdAt: '2024-01-02T00:00:00Z',
-      updatedAt: '2024-01-02T00:00:00Z'
-    }
-  ]);
+interface DoctorsManagementProps {
+  currentUser?: {
+    role: string;
+    id: string;
+  };
+}
 
+export function DoctorsManagement({ currentUser: propCurrentUser }: DoctorsManagementProps = {}) {
+  const currentUser = propCurrentUser || {
+    role: 'admin' as Role,
+    id: 'current-user-id'
+  };
+
+  const { permissions } = usePermissions({
+    userRole: currentUser.role as Role,
+    userId: currentUser.id
+  });
+
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
@@ -48,32 +42,50 @@ export function DoctorsManagement() {
     licenseNumber: ''
   });
 
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      const response = await apiClient.get('/doctors');
+      if (response.success) {
+        setDoctors(response.data);
+      }
+    };
+    if (permissions.doctors.canView) {
+      fetchDoctors();
+    }
+  }, [permissions.doctors.canView]);
+
   const filteredDoctors = doctors.filter(doctor =>
     doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     doctor.specialization.toLowerCase().includes(searchTerm.toLowerCase()) ||
     doctor.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (editingDoctor) {
-      // Update existing doctor
-      setDoctors(prev => prev.map(doctor => 
-        doctor.id === editingDoctor.id 
-          ? { ...doctor, ...formData, updatedAt: new Date().toISOString() }
-          : doctor
-      ));
+      if (!permissions.doctors.canEdit) return;
+      const response = await apiClient.put(`/doctors/${editingDoctor.id}`, formData);
+      if (response.success) {
+        setDoctors(prev => prev.map(doctor => 
+          doctor.id === editingDoctor.id 
+            ? { ...doctor, ...formData, updatedAt: new Date().toISOString() }
+            : doctor
+        ));
+      }
     } else {
-      // Create new doctor
-      const newDoctor: Doctor = {
-        id: Date.now().toString(),
-        ...formData,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      setDoctors(prev => [...prev, newDoctor]);
+      if (!permissions.doctors.canCreate) return;
+      const response = await apiClient.post('/doctors', formData);
+      if (response.success) {
+        const newDoctor: Doctor = {
+            id: response.data.id,
+            ...formData,
+            isActive: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+        };
+        setDoctors(prev => [...prev, newDoctor]);
+      }
     }
 
     resetForm();
@@ -92,6 +104,7 @@ export function DoctorsManagement() {
   };
 
   const handleEdit = (doctor: Doctor) => {
+    if (!permissions.doctors.canEdit) return;
     setEditingDoctor(doctor);
     setFormData({
       name: doctor.name,
@@ -103,21 +116,32 @@ export function DoctorsManagement() {
     setDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
+    if (!permissions.doctors.canDelete) return;
     if (confirm('Are you sure you want to delete this doctor?')) {
-      setDoctors(prev => prev.filter(doctor => doctor.id !== id));
+      const response = await apiClient.delete(`/doctors/${id}`);
+      if (response.success) {
+        setDoctors(prev => prev.filter(doctor => doctor.id !== id));
+      }
     }
   };
 
-  const toggleStatus = (id: string) => {
-    setDoctors(prev => prev.map(doctor => 
-      doctor.id === id 
-        ? { ...doctor, isActive: !doctor.isActive, updatedAt: new Date().toISOString() }
-        : doctor
-    ));
+  const toggleStatus = async (id: string) => {
+    if (!permissions.doctors.canEdit) return;
+    const doctor = doctors.find(doc => doc.id === id);
+    if (doctor) {
+      const response = await apiClient.patch(`/doctors/${id}`, { isActive: !doctor.isActive });
+      if (response.success) {
+        setDoctors(prev => prev.map(doc => 
+          doc.id === id 
+            ? { ...doc, isActive: !doc.isActive, updatedAt: new Date().toISOString() }
+            : doc
+        ));
+      }
+    }
   };
 
-  if (!hasPermission('manage_doctors')) {
+  if (!permissions.doctors.canView) {
     return (
       <div className="p-6">
         <Card>
@@ -137,78 +161,80 @@ export function DoctorsManagement() {
           <p className="text-muted-foreground">Manage doctor profiles and information</p>
         </div>
         
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => { resetForm(); setDialogOpen(true); }}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Doctor
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>{editingDoctor ? 'Edit Doctor' : 'Add New Doctor'}</DialogTitle>
-              <DialogDescription>
-                {editingDoctor ? 'Update the doctor information below.' : 'Fill in the details to add a new doctor to the system.'}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="name">Full Name</label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="specialization">Specialization</label>
-                <Input
-                  id="specialization"
-                  value={formData.specialization}
-                  onChange={(e) => setFormData(prev => ({ ...prev, specialization: e.target.value }))}
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="email">Email</label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="phone">Phone</label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="licenseNumber">License Number</label>
-                <Input
-                  id="licenseNumber"
-                  value={formData.licenseNumber}
-                  onChange={(e) => setFormData(prev => ({ ...prev, licenseNumber: e.target.value }))}
-                  required
-                />
-              </div>
-              <div className="flex gap-2 pt-4">
-                <Button type="submit" className="flex-1">
-                  {editingDoctor ? 'Update Doctor' : 'Add Doctor'}
-                </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        {permissions.doctors.canCreate && (
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => { resetForm(); setDialogOpen(true); }}>
+                <Plus className="w-4 h-4 mr-2" />
+                Add Doctor
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>{editingDoctor ? 'Edit Doctor' : 'Add New Doctor'}</DialogTitle>
+                <DialogDescription>
+                  {editingDoctor ? 'Update the doctor information below.' : 'Fill in the details to add a new doctor to the system.'}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="name">Full Name</label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="specialization">Specialization</label>
+                  <Input
+                    id="specialization"
+                    value={formData.specialization}
+                    onChange={(e) => setFormData(prev => ({ ...prev, specialization: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="email">Email</label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="phone">Phone</label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="licenseNumber">License Number</label>
+                  <Input
+                    id="licenseNumber"
+                    value={formData.licenseNumber}
+                    onChange={(e) => setFormData(prev => ({ ...prev, licenseNumber: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button type="submit" className="flex-1">
+                    {editingDoctor ? 'Update Doctor' : 'Add Doctor'}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={resetForm}>
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       {/* Search */}
@@ -259,21 +285,25 @@ export function DoctorsManagement() {
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(doctor)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(doctor.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {permissions.doctors.canEdit && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(doctor)}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                      )}
+                      {permissions.doctors.canDelete && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(doctor.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>

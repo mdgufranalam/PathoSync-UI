@@ -8,7 +8,7 @@ import { Badge } from './ui/badge';
 import { Separator } from './ui/separator';
 import { PrintSettings } from './PrintSettings';
 import { 
-  User, 
+  User as UserIcon, 
   Mail, 
   Phone, 
   Calendar, 
@@ -20,26 +20,17 @@ import {
   Bell,
   Lock
 } from 'lucide-react';
+import { User } from '../types';
+import { Page } from '../App';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  department: string;
-  joinDate: string;
-  avatar?: string;
-  permissions: string[];
-}
-
-interface UserProfileProps {
+export interface UserProfileProps {
   user: User;
   onLogout: () => void;
   onUpdateProfile: (userData: Partial<User>) => void;
+  onNavigate: (page: Page) => void;
 }
 
-export function UserProfile({ user, onLogout, onUpdateProfile }: UserProfileProps) {
+export function UserProfile({ user, onLogout, onUpdateProfile, onNavigate }: UserProfileProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isPrintSettingsOpen, setIsPrintSettingsOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -133,7 +124,7 @@ export function UserProfile({ user, onLogout, onUpdateProfile }: UserProfileProp
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
+              <UserIcon className="w-5 h-5" />
               Profile Information
             </CardTitle>
           </CardHeader>
@@ -142,7 +133,7 @@ export function UserProfile({ user, onLogout, onUpdateProfile }: UserProfileProp
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <Avatar className="w-20 h-20">
-                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarImage src={user.profilePicture} alt={user.name} />
                   <AvatarFallback className="text-lg bg-blue-100 text-blue-600">
                     {user.name.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
@@ -182,7 +173,7 @@ export function UserProfile({ user, onLogout, onUpdateProfile }: UserProfileProp
                     />
                   ) : (
                     <div className="flex items-center mt-1 p-2 bg-muted rounded-md">
-                      <User className="w-4 h-4 mr-2 text-muted-foreground" />
+                      <UserIcon className="w-4 h-4 mr-2 text-muted-foreground" />
                       {user.name}
                     </div>
                   )}
@@ -293,7 +284,7 @@ export function UserProfile({ user, onLogout, onUpdateProfile }: UserProfileProp
                 Permissions
               </h4>
               <div className="space-y-1">
-                {user.permissions.map((permission, index) => (
+                {user.features.map((permission, index) => (
                   <div key={index} className="text-sm text-muted-foreground flex items-center">
                     <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
                     {permission}

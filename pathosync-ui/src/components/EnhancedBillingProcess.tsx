@@ -15,14 +15,16 @@ import { ArrowLeft, ArrowRight, Search, X, Plus, Minus, FileText, Receipt } from
 import { useAuth } from '../hooks/useAuth';
 import { useBills } from '../hooks/useBills';
 import { toast } from 'sonner';
+import { Page } from '../App';
 
-interface EnhancedBillingProcessProps {
+export interface EnhancedBillingProcessProps {
   onBack: () => void;
+  onNavigate: (page: Page) => void;
 }
 
 type Step = 1 | 2 | 3 | 4 | 5;
 
-export function EnhancedBillingProcess({ onBack }: EnhancedBillingProcessProps) {
+export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingProcessProps) {
   const { hasPermission } = useAuth();
   const { addBill } = useBills();
   const [currentStep, setCurrentStep] = useState<Step>(1);
@@ -84,8 +86,6 @@ export function EnhancedBillingProcess({ onBack }: EnhancedBillingProcessProps) 
       phone: '+1-234-567-9001',
       licenseNumber: 'MD-12345',
       isActive: true,
-      createdAt: '2024-01-01T00:00:00Z',
-      updatedAt: '2024-01-01T00:00:00Z'
     },
     {
       id: '2',
@@ -95,8 +95,6 @@ export function EnhancedBillingProcess({ onBack }: EnhancedBillingProcessProps) 
       phone: '+1-234-567-9002',
       licenseNumber: 'MD-12346',
       isActive: true,
-      createdAt: '2024-01-02T00:00:00Z',
-      updatedAt: '2024-01-02T00:00:00Z'
     }
   ];
 
@@ -144,22 +142,7 @@ export function EnhancedBillingProcess({ onBack }: EnhancedBillingProcessProps) 
     const loadTests = async () => {
       try {
         const tests = await mockTestsAPI.getAllTests();
-        // Transform the data to match the expected format
-        const formattedTests = tests.map(test => ({
-          id: test.id,
-          name: test.testName,
-          category: test.tag || 'General',
-          price: test.price,
-          description: test.notes || test.testName,
-          normalRange: test.referenceRanges?.map(range => 
-            `${range.name}: ${range.minValue}-${range.maxValue} ${range.unit}`
-          ).join(', ') || '',
-          unit: test.unit || '',
-          isActive: test.isActive || true,
-          createdAt: test.createdAt || new Date().toISOString(),
-          updatedAt: test.updatedAt || new Date().toISOString()
-        }));
-        setAvailableTests(formattedTests);
+        setAvailableTests(tests);
       } catch (error) {
         console.error('Error loading tests:', error);
       }
@@ -168,7 +151,6 @@ export function EnhancedBillingProcess({ onBack }: EnhancedBillingProcessProps) 
   }, []);
 
   const mockLab: Lab = {
-    id: '1',
     name: 'HealthCare SaaS Lab',
     address: '123 Medical Center Dr, Health City, HC 12345',
     phone: '+1-800-123-4567',
@@ -187,7 +169,7 @@ export function EnhancedBillingProcess({ onBack }: EnhancedBillingProcessProps) 
   );
 
   const filteredTests = availableTests.filter(t => 
-    t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    t.testName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     t.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -231,8 +213,6 @@ export function EnhancedBillingProcess({ onBack }: EnhancedBillingProcessProps) 
       phone: '+91-9876543210',
       licenseNumber: 'ADMIN-001',
       isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
     };
     setSelectedDoctor(selfDoctor);
     setDoctorSearchTerm('');
@@ -248,26 +228,19 @@ export function EnhancedBillingProcess({ onBack }: EnhancedBillingProcessProps) 
     
     const bill: Bill = {
       id: `BILL-${Date.now()}`,
-      patientId: selectedPatient.id,
       patient: selectedPatient,
-      doctorId: selectedDoctor.id,
       doctor: selectedDoctor,
-      tests: selectedTests.map(item => ({
-        testId: item.test.id,
-        test: item.test,
-        quantity: item.quantity,
-        price: item.test.price
-      })),
+      tests: selectedTests,
       subtotal: subtotalWithCollection,
       tax,
       discount,
       total,
+      finalAmount: total, // Assuming finalAmount is the same as total for now
       status: 'pending',
       paymentMethod,
       notes,
       sampleDate,
       sampleTime,
-      // Collection Center Information
       collectionCenter: selectedCenter ? {
         id: selectedCenter.id,
         code: selectedCenter.code,
@@ -440,7 +413,7 @@ export function EnhancedBillingProcess({ onBack }: EnhancedBillingProcessProps) 
                     <div key={test.id} className="p-3 border rounded-lg">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <h4>{test.name}</h4>
+                          <h4>{test.testName}</h4>
                           <p className="text-muted-foreground">{test.description}</p>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="outline">{test.category}</Badge>
@@ -469,7 +442,7 @@ export function EnhancedBillingProcess({ onBack }: EnhancedBillingProcessProps) 
                     {selectedTests.map((item) => (
                       <div key={item.test.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex-1">
-                          <h5>{item.test.name}</h5>
+                          <h5>{item.test.testName}</h5>
                           <p className="text-muted-foreground">₹{item.test.price} each</p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -528,7 +501,7 @@ export function EnhancedBillingProcess({ onBack }: EnhancedBillingProcessProps) 
                   <TableBody>
                     {selectedTests.map((item) => (
                       <TableRow key={item.test.id}>
-                        <TableCell>{item.test.name}</TableCell>
+                        <TableCell>{item.test.testName}</TableCell>
                         <TableCell>{item.quantity}</TableCell>
                         <TableCell>₹{item.test.price}</TableCell>
                         <TableCell>₹{item.quantity * item.test.price}</TableCell>
@@ -772,7 +745,7 @@ export function EnhancedBillingProcess({ onBack }: EnhancedBillingProcessProps) 
         <Card>
           <CardContent className="p-6 text-center">
             <p>You don't have permission to manage billing.</p>
-            <Button onClick={onBack} className="mt-4">
+            <Button onClick={() => onNavigate('dashboard')} className="mt-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
@@ -786,7 +759,7 @@ export function EnhancedBillingProcess({ onBack }: EnhancedBillingProcessProps) 
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" onClick={onBack}>
+        <Button variant="ghost" onClick={() => onNavigate('dashboard')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back
         </Button>

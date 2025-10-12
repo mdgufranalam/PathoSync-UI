@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
 import { Plus, FileText, Users, UserCheck, TestTube, Package, BarChart3, Building2, Crown, Lock, ArrowRight } from 'lucide-react';
+import { NotificationCenter } from './NotificationCenter';
 
 interface User {
   id: string;
@@ -143,13 +144,17 @@ export function Dashboard({ onNavigate, user }: DashboardProps) {
           </div>
         </div>
         
-        <Button 
-          onClick={() => onNavigate('billing')}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 gap-2"
-        >
-          <Plus className="w-5 h-5" />
-          Create Lab Bill
-        </Button>
+        <div className="flex items-center gap-4">
+          <Button 
+            onClick={() => onNavigate('billing')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            Create Lab Bill
+          </Button>
+          <NotificationCenter />
+        </div>
+
       </div>
 
       {/* Upgrade Banner for Basic/Starter Users */}

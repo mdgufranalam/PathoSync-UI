@@ -17,7 +17,9 @@ const mockCurrentUser: User = {
   email: 'admin@healthcare.com',
   role: 'admin',
   createdAt: new Date().toISOString(),
-  isActive: true
+  isActive: true,
+  features: ['statistics_revenue', 'statistics_bills', 'statistics_tests', 'statistics_patients'],
+  subscription_plan: 'enterprise'
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -41,7 +43,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       viewer: ['read']
     };
 
-    return permissions[currentUser.role]?.includes(permission) || false;
+    const hasRolePermission = permissions[currentUser.role]?.includes(permission) || false;
+
+    if (permission.startsWith('statistics_')) {
+      return currentUser.features?.includes(permission) && (currentUser.role === 'admin' || currentUser.role === 'manager' || currentUser.role === 'superadmin');
+    }
+
+    if (permission === 'export') {
+      return currentUser.subscription_plan === 'professional' || currentUser.subscription_plan === 'enterprise';
+    }
+
+    return hasRolePermission;
   };
 
   return (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -24,6 +24,7 @@ import { format } from 'date-fns';
 import { Patient } from '../types';
 import { usePermissions } from '../hooks/usePermissions';
 import { Role } from '../types/permissions';
+import { apiClient } from '../utils/apiClient';
 
 interface PatientsManagementProps {
   currentUser?: {
@@ -43,42 +44,7 @@ export function PatientsManagement({ currentUser: propCurrentUser }: PatientsMan
     userRole: currentUser.role as Role,
     userId: currentUser.id
   });
-  const [patients, setPatients] = useState<Patient[]>([
-    {
-      id: 'PAT-001',
-      name: 'John Smith',
-      email: 'john.smith@email.com',
-      phone: '+91-9876543210',
-      address: '123 Main Street, City, State - 123456',
-      dateOfBirth: '1990-05-15',
-      gender: 'male',
-      emergencyContact: '+91-9876543211',
-      createdAt: '2024-10-01T10:00:00Z'
-    },
-    {
-      id: 'PAT-002',
-      name: 'Emily Davis',
-      email: 'emily.davis@email.com',
-      phone: '+91-9876543213',
-      address: '456 Oak Avenue, City, State - 123457',
-      dateOfBirth: '1985-08-20',
-      gender: 'female',
-      emergencyContact: '+91-9876543214',
-      createdAt: '2024-10-01T11:00:00Z'
-    },
-    {
-      id: 'PAT-003',
-      name: 'Michael Johnson',
-      email: 'michael.j@email.com',
-      phone: '+91-9876543215',
-      address: '789 Pine Street, City, State - 123458',
-      dateOfBirth: '1978-12-10',
-      gender: 'male',
-      emergencyContact: '+91-9876543216',
-      createdAt: '2024-10-02T09:30:00Z'
-    }
-  ]);
-
+  const [patients, setPatients] = useState<Patient[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
@@ -91,6 +57,16 @@ export function PatientsManagement({ currentUser: propCurrentUser }: PatientsMan
     gender: 'male' as 'male' | 'female' | 'other',
     emergencyContact: ''
   });
+
+  useEffect(() => {
+    const fetchPatients = async () => {
+      const response = await apiClient.get('/patients');
+      if (response.success) {
+        setPatients(response.data);
+      }
+    };
+    fetchPatients();
+  }, []);
 
   const filteredPatients = patients.filter(patient =>
     patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -111,24 +87,30 @@ export function PatientsManagement({ currentUser: propCurrentUser }: PatientsMan
     setEditingPatient(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (editingPatient) {
       // Update existing patient
-      setPatients(prev => prev.map(patient =>
-        patient.id === editingPatient.id
-          ? { ...patient, ...formData }
-          : patient
-      ));
+      const response = await apiClient.put(`/patients/${editingPatient.id}`, formData);
+      if (response.success) {
+        setPatients(prev => prev.map(patient =>
+          patient.id === editingPatient.id
+            ? { ...patient, ...formData }
+            : patient
+        ));
+      }
     } else {
       // Add new patient
-      const newPatient: Patient = {
-        id: `PAT-${String(patients.length + 1).padStart(3, '0')}`,
-        ...formData,
-        createdAt: new Date().toISOString()
-      };
-      setPatients(prev => [...prev, newPatient]);
+      const response = await apiClient.post('/patients', formData);
+      if (response.success) {
+        const newPatient: Patient = {
+            id: response.data.id,
+            ...formData,
+            createdAt: new Date().toISOString()
+        };
+        setPatients(prev => [...prev, newPatient]);
+      }
     }
 
     resetForm();
@@ -149,9 +131,12 @@ export function PatientsManagement({ currentUser: propCurrentUser }: PatientsMan
     setIsAddModalOpen(true);
   };
 
-  const handleDelete = (patientId: string) => {
+  const handleDelete = async (patientId: string) => {
     if (window.confirm('Are you sure you want to delete this patient?')) {
-      setPatients(prev => prev.filter(patient => patient.id !== patientId));
+      const response = await apiClient.delete(`/patients/${patientId}`);
+      if (response.success) {
+        setPatients(prev => prev.filter(patient => patient.id !== patientId));
+      }
     }
   };
 

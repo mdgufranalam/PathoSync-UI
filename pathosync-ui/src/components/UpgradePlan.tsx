@@ -15,10 +15,11 @@ import {
   ArrowRight,
   Star
 } from 'lucide-react';
+import { Page } from '../App';
 
-interface UpgradePlanProps {
-  currentPlan: 'basic' | 'starter' | 'professional' | 'enterprise';
-  onNavigate: (page: string) => void;
+export interface UpgradePlanProps {
+  currentPlan: 'starter' | 'basic' | 'professional' | 'enterprise';
+  onNavigate: (page: Page) => void;
   restrictedFeature?: string;
 }
 

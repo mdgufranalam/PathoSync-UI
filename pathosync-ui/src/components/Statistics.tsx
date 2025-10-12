@@ -1,66 +1,84 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
-import { Download, TrendingUp, TrendingDown, FileText, DollarSign, Users, TestTube, Calendar } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, FileText, DollarSign, Users, TestTube, Calendar, RefreshCw } from 'lucide-react';
+import { apiClient } from '../utils/apiClient';
+import { Skeleton } from './ui/skeleton';
+import { useAuth } from '../hooks/useAuth';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 
 export function Statistics() {
+  const { hasPermission } = useAuth();
   const [selectedPeriod, setSelectedPeriod] = useState('7days');
+  const [statisticsData, setStatisticsData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
 
-  // Mock data for charts
-  const dailyRevenueData = [
-    { date: 'Mon', revenue: 15000, bills: 45 },
-    { date: 'Tue', revenue: 18000, bills: 52 },
-    { date: 'Wed', revenue: 22000, bills: 61 },
-    { date: 'Thu', revenue: 19000, bills: 48 },
-    { date: 'Fri', revenue: 25000, bills: 67 },
-    { date: 'Sat', revenue: 28000, bills: 72 },
-    { date: 'Sun', revenue: 16000, bills: 38 }
-  ];
-
-  const monthlyData = [
-    { month: 'Jan', revenue: 450000, bills: 1200 },
-    { month: 'Feb', revenue: 520000, bills: 1350 },
-    { month: 'Mar', revenue: 480000, bills: 1180 },
-    { month: 'Apr', revenue: 610000, bills: 1520 },
-    { month: 'May', revenue: 580000, bills: 1460 },
-    { month: 'Jun', revenue: 720000, bills: 1750 }
-  ];
-
-  const testCategoryData = [
-    { name: 'Biochemistry', value: 35, color: '#3B82F6' },
-    { name: 'Hematology', value: 25, color: '#10B981' },
-    { name: 'Cardiology', value: 15, color: '#F59E0B' },
-    { name: 'Radiology', value: 12, color: '#EF4444' },
-    { name: 'Pathology', value: 8, color: '#8B5CF6' },
-    { name: 'Others', value: 5, color: '#6B7280' }
-  ];
-
-  const topTests = [
-    { name: 'Complete Blood Count', count: 156, revenue: 46800 },
-    { name: 'Blood Sugar (Fasting)', count: 134, revenue: 20100 },
-    { name: 'Lipid Profile', count: 89, revenue: 44500 },
-    { name: 'Thyroid Function Test', count: 67, revenue: 53600 },
-    { name: 'Liver Function Test', count: 56, revenue: 33600 }
-  ];
-
-  const keyMetrics = {
-    totalBills: 1847,
-    totalRevenue: 3650000,
-    totalDiscount: 142000,
-    netRevenue: 3508000,
-    avgBillValue: 1976,
-    totalPatients: 1234,
-    repeatPatients: 456,
-    totalTests: 3421
+  const fetchStatistics = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await apiClient.get(`/statistics?period=${selectedPeriod}`);
+      setStatisticsData(response.data);
+    } catch (error) {
+      setError(error);
+    }
+    setLoading(false);
   };
 
-  const handleDownload = (format: 'pdf' | 'excel') => {
-    console.log(`Downloading statistics in ${format} format`);
+  useEffect(() => {
+    fetchStatistics();
+  }, [selectedPeriod]);
+
+  const handleExport = async (format: 'pdf' | 'excel' | 'csv') => {
+    setIsExporting(true);
+    try {
+      const response = await apiClient.get(`/export?format=${format}&period=${selectedPeriod}`, {
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([response.data], {
+        type: response.headers['content-type'],
+      });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = `statistics.${format}`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?(.+)"?/i);
+        if (filenameMatch.length > 1) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+    } catch (error) {
+      console.error(`Error exporting ${format} file:`, error);
+    }
+    setIsExporting(false);
   };
+
+  if (loading) {
+    return <Skeleton className="h-screen w-full" />;
+  }
+
+  if (error) {
+    return <div>Error: {error.message}</div>;
+  }
+
+  const { dailyRevenueData, monthlyData, testCategoryData, topTests, keyMetrics, billStatusDistribution, patientAgeDistribution } = statisticsData;
 
   return (
     <div className="p-6 space-y-6">
@@ -84,94 +102,148 @@ export function Statistics() {
             </SelectContent>
           </Select>
           
-          <Button variant="outline" onClick={() => handleDownload('pdf')}>
-            <Download className="w-4 h-4 mr-2" />
-            PDF
-          </Button>
-          <Button variant="outline" onClick={() => handleDownload('excel')}>
-            <Download className="w-4 h-4 mr-2" />
-            Excel
+          {hasPermission('export') && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Export Statistics</DialogTitle>
+                </DialogHeader>
+                <div className="grid grid-cols-3 gap-4">
+                  <Button variant="outline" onClick={() => handleExport('pdf')} disabled={isExporting}>
+                    PDF
+                  </Button>
+                  <Button variant="outline" onClick={() => handleExport('excel')} disabled={isExporting}>
+                    Excel
+                  </Button>
+                  <Button variant="outline" onClick={() => handleExport('csv')} disabled={isExporting}>
+                    CSV
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+          
+          <Button variant="outline" onClick={fetchStatistics}>
+            <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4">
+        {hasPermission('statistics_bills') && <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-500">Total Bills</p>
-              <p className="text-2xl">{keyMetrics.totalBills.toLocaleString()}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <TrendingUp className="w-3 h-3 text-green-600" />
-                <span className="text-xs text-green-600">+12% from last month</span>
-              </div>
+              <p className="text-2xl">{keyMetrics.totalbills}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-lg">
               <FileText className="w-6 h-6 text-blue-600" />
             </div>
           </div>
-        </Card>
+        </Card>}
 
-        <Card className="p-4">
+        {hasPermission('statistics_revenue') && <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-500">Total Revenue</p>
-              <p className="text-2xl">₹{(keyMetrics.totalRevenue / 100000).toFixed(1)}L</p>
-              <div className="flex items-center gap-1 mt-1">
-                <TrendingUp className="w-3 h-3 text-green-600" />
-                <span className="text-xs text-green-600">+8% from last month</span>
-              </div>
+              <p className="text-2xl">₹{(keyMetrics.totalrevenue / 100000).toFixed(1)}L</p>
             </div>
             <div className="p-3 bg-green-100 rounded-lg">
               <DollarSign className="w-6 h-6 text-green-600" />
             </div>
           </div>
-        </Card>
+        </Card>}
 
-        <Card className="p-4">
+        {hasPermission('statistics_revenue') && <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-500">Total Discount</p>
-              <p className="text-2xl">₹{(keyMetrics.totalDiscount / 1000).toFixed(0)}K</p>
-              <div className="flex items-center gap-1 mt-1">
-                <TrendingDown className="w-3 h-3 text-red-600" />
-                <span className="text-xs text-red-600">3.9% of revenue</span>
-              </div>
+              <p className="text-2xl">₹{(keyMetrics.totaldiscount / 1000).toFixed(0)}K</p>
             </div>
             <div className="p-3 bg-red-100 rounded-lg">
               <TrendingDown className="w-6 h-6 text-red-600" />
             </div>
           </div>
-        </Card>
+        </Card>}
 
-        <Card className="p-4">
+        {hasPermission('statistics_revenue') && <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-500">Net Revenue</p>
+              <p className="text-2xl">₹{(keyMetrics.netrevenue / 100000).toFixed(1)}L</p>
+            </div>
+            <div className="p-3 bg-purple-100 rounded-lg">
+              <DollarSign className="w-6 h-6 text-purple-600" />
+            </div>
+          </div>
+        </Card>}
+
+        {hasPermission('statistics_bills') && <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-slate-500">Avg. Bill Value</p>
-              <p className="text-2xl">₹{keyMetrics.avgBillValue.toLocaleString()}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <TrendingUp className="w-3 h-3 text-green-600" />
-                <span className="text-xs text-green-600">+5% from last month</span>
-              </div>
+              <p className="text-2xl">₹{keyMetrics.avgbillvalue}</p>
+            </div>
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <Users className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+        </Card>}
+
+        {hasPermission('statistics_patients') && <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-500">Total Patients</p>
+              <p className="text-2xl">{keyMetrics.totalpatients}</p>
+            </div>
+            <div className="p-3 bg-green-100 rounded-lg">
+              <Users className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+        </Card>}
+
+        {hasPermission('statistics_patients') && <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-500">Repeat Patients</p>
+              <p className="text-2xl">{keyMetrics.repeatpatients}</p>
             </div>
             <div className="p-3 bg-purple-100 rounded-lg">
               <Users className="w-6 h-6 text-purple-600" />
             </div>
           </div>
-        </Card>
+        </Card>}
+
+        {hasPermission('statistics_tests') && <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-slate-500">Total Tests</p>
+              <p className="text-2xl">{keyMetrics.totaltests}</p>
+            </div>
+            <div className="p-3 bg-red-100 rounded-lg">
+              <TestTube className="w-6 h-6 text-red-600" />
+            </div>
+          </div>
+        </Card>}
       </div>
 
       {/* Charts Section */}
       <Tabs defaultValue="revenue" className="space-y-6">
         <TabsList className="grid grid-cols-4 w-full md:w-auto">
-          <TabsTrigger value="revenue">Revenue</TabsTrigger>
-          <TabsTrigger value="bills">Bills</TabsTrigger>
-          <TabsTrigger value="tests">Tests</TabsTrigger>
-          <TabsTrigger value="patients">Patients</TabsTrigger>
+          {hasPermission('statistics_revenue') && <TabsTrigger value="revenue">Revenue</TabsTrigger>}
+          {hasPermission('statistics_bills') && <TabsTrigger value="bills">Bills</TabsTrigger>}
+          {hasPermission('statistics_tests') && <TabsTrigger value="tests">Tests</TabsTrigger>}
+          {hasPermission('statistics_patients') && <TabsTrigger value="patients">Patients</TabsTrigger>}
         </TabsList>
 
-        <TabsContent value="revenue" className="space-y-6">
+        {hasPermission('statistics_revenue') && <TabsContent value="revenue" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Daily Revenue Chart */}
             <Card className="p-6">
@@ -201,9 +273,9 @@ export function Statistics() {
               </ResponsiveContainer>
             </Card>
           </div>
-        </TabsContent>
+        </TabsContent>}
 
-        <TabsContent value="bills" className="space-y-6">
+        {hasPermission('statistics_bills') && <TabsContent value="bills" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Bills Count Chart */}
             <Card className="p-6">
@@ -223,44 +295,24 @@ export function Statistics() {
             <Card className="p-6">
               <h3 className="mb-4">Bill Status Distribution</h3>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 bg-green-500 rounded"></div>
-                    <span>Paid Bills</span>
+                {billStatusDistribution.map((status, index) => (
+                  <div key={index} className={`flex items-center justify-between p-3 rounded-lg bg-${status.status === 'paid' ? 'green' : status.status === 'pending' ? 'orange' : 'red'}-50`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-4 h-4 bg-${status.status === 'paid' ? 'green' : status.status === 'pending' ? 'orange' : 'red'}-500 rounded`}></div>
+                      <span>{status.status.charAt(0).toUpperCase() + status.status.slice(1)} Bills</span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg">{status.count}</p>
+                      <p className="text-sm text-slate-500">{status.percentage.toFixed(1)}%</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg">1,547</p>
-                    <p className="text-sm text-slate-500">83.7%</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 bg-orange-500 rounded"></div>
-                    <span>Pending Bills</span>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg">234</p>
-                    <p className="text-sm text-slate-500">12.7%</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-4 h-4 bg-red-500 rounded"></div>
-                    <span>Due Bills</span>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg">66</p>
-                    <p className="text-sm text-slate-500">3.6%</p>
-                  </div>
-                </div>
+                ))}
               </div>
             </Card>
           </div>
-        </TabsContent>
+        </TabsContent>}
 
-        <TabsContent value="tests" className="space-y-6">
+        {hasPermission('statistics_tests') && <TabsContent value="tests" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Test Category Distribution */}
             <Card className="p-6">
@@ -307,9 +359,9 @@ export function Statistics() {
               </div>
             </Card>
           </div>
-        </TabsContent>
+        </TabsContent>}
 
-        <TabsContent value="patients" className="space-y-6">
+        {hasPermission('statistics_patients') && <TabsContent value="patients" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Patient Statistics */}
             <Card className="p-6">
@@ -318,7 +370,7 @@ export function Statistics() {
                 <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
                   <div>
                     <p className="text-sm text-slate-600">Total Patients</p>
-                    <p className="text-2xl">{keyMetrics.totalPatients.toLocaleString()}</p>
+                    <p className="text-2xl">{keyMetrics.totalpatients}</p>
                   </div>
                   <Users className="w-8 h-8 text-blue-600" />
                 </div>
@@ -326,11 +378,11 @@ export function Statistics() {
                 <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
                   <div>
                     <p className="text-sm text-slate-600">Repeat Patients</p>
-                    <p className="text-2xl">{keyMetrics.repeatPatients}</p>
+                    <p className="text-2xl">{keyMetrics.repeatpatients}</p>
                   </div>
                   <div className="text-right">
                     <Badge variant="secondary">
-                      {((keyMetrics.repeatPatients / keyMetrics.totalPatients) * 100).toFixed(1)}%
+                      {((keyMetrics.repeatpatients / keyMetrics.totalpatients) * 100).toFixed(1)}%
                     </Badge>
                   </div>
                 </div>
@@ -338,7 +390,7 @@ export function Statistics() {
                 <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
                   <div>
                     <p className="text-sm text-slate-600">New Patients (This Month)</p>
-                    <p className="text-2xl">89</p>
+                    <p className="text-2xl">{keyMetrics.totalpatients - keyMetrics.repeatpatients}</p>
                   </div>
                   <TrendingUp className="w-8 h-8 text-purple-600" />
                 </div>
@@ -349,20 +401,14 @@ export function Statistics() {
             <Card className="p-6">
               <h3 className="mb-4">Patient Age Distribution</h3>
               <div className="space-y-3">
-                {[
-                  { range: '0-18', count: 156, percentage: 12.6 },
-                  { range: '19-30', count: 298, percentage: 24.1 },
-                  { range: '31-45', count: 387, percentage: 31.4 },
-                  { range: '46-60', count: 278, percentage: 22.5 },
-                  { range: '60+', count: 115, percentage: 9.3 }
-                ].map((group, index) => (
+                {patientAgeDistribution.map((group, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <span className="text-sm">{group.range} years</span>
                     <div className="flex items-center gap-3">
                       <div className="w-24 bg-slate-200 rounded-full h-2">
                         <div 
                           className="bg-blue-600 h-2 rounded-full" 
-                          style={{ width: `${group.percentage}%` }}
+                          style={{ width: `${(group.count / keyMetrics.totalpatients) * 100}%` }}
                         />
                       </div>
                       <span className="text-sm w-12 text-right">{group.count}</span>
@@ -372,7 +418,7 @@ export function Statistics() {
               </div>
             </Card>
           </div>
-        </TabsContent>
+        </TabsContent>}
       </Tabs>
     </div>
   );

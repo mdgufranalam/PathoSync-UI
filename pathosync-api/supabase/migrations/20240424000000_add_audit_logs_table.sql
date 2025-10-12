@@ -1,0 +1,18 @@
+CREATE TABLE files (
+  id SERIAL PRIMARY KEY,
+  tenant_id INT NOT NULL,
+  user_id INT NOT NULL,
+  filename VARCHAR(255) NOT NULL,
+  bucket VARCHAR(255) NOT NULL,
+  path VARCHAR(1024) NOT NULL,
+  content_type VARCHAR(255) NOT NULL,
+  size INT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE TABLE audit_logs (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID REFERENCES users(id),
+  action TEXT NOT NULL,
+  details JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

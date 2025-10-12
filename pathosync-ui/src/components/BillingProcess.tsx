@@ -12,9 +12,10 @@ import { ArrowLeft, ArrowRight, Search, X, Plus, Minus } from 'lucide-react';
 import { mockTestsAPI, mockTestsData } from '../utils/mockTestsAPI';
 import { useBills } from '../hooks/useBills';
 import { toast } from 'sonner';
+import { Page } from '../App';
 
-interface BillingProcessProps {
-  onBack: () => void;
+export interface BillingProcessProps {
+  onNavigate: (page: Page) => void;
 }
 
 type Step = 1 | 2 | 3 | 4;
@@ -46,7 +47,7 @@ interface Test {
   price: number;
 }
 
-export function BillingProcess({ onBack }: BillingProcessProps) {
+export function BillingProcess({ onNavigate }: BillingProcessProps) {
   const { addBill } = useBills();
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [patient, setPatient] = useState<Partial<Patient>>({});
@@ -232,7 +233,7 @@ export function BillingProcess({ onBack }: BillingProcessProps) {
         notes: ''
       };
 
-      await addBill(billData);
+      await addBill(billData as any);
       toast.success('Bill created successfully!');
       
       // Reset form
@@ -247,7 +248,7 @@ export function BillingProcess({ onBack }: BillingProcessProps) {
       setDoctorSearchTerm('');
       
       // Go back to dashboard
-      onBack();
+      onNavigate('dashboard');
     } catch (error) {
       console.error('Error creating bill:', error);
       toast.error('Failed to create bill');
@@ -267,7 +268,7 @@ export function BillingProcess({ onBack }: BillingProcessProps) {
     <div className="p-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" onClick={onBack}>
+        <Button variant="ghost" onClick={() => onNavigate('dashboard')}>
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
@@ -805,7 +806,7 @@ export function BillingProcess({ onBack }: BillingProcessProps) {
         {/* Navigation Buttons */}
         <div className="flex justify-between mt-8">
           <div className="flex gap-2">
-            <Button variant="outline" onClick={onBack}>
+            <Button variant="outline" onClick={() => onNavigate('dashboard')}>
               Cancel
             </Button>
             {currentStep > 1 && (

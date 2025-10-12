@@ -1,0 +1,11 @@
+CREATE TABLE files (
+  id SERIAL PRIMARY KEY,
+  tenant_id INT NOT NULL,
+  user_id INT NOT NULL,
+  filename VARCHAR(255) NOT NULL,
+  bucket VARCHAR(255) NOT NULL,
+  path VARCHAR(1024) NOT NULL,
+  content_type VARCHAR(255) NOT NULL,
+  size INT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
