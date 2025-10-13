@@ -1,5 +1,5 @@
 import { useState, useContext, createContext, ReactNode } from 'react';
-import { User } from '../types';
+import { User } from '../types/index';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -16,8 +16,8 @@ const mockCurrentUser: User = {
   name: 'Dr. Admin',
   email: 'admin@healthcare.com',
   role: 'admin',
-  createdAt: new Date().toISOString(),
-  isActive: true,
+  created_at: new Date().toISOString(),
+  is_active: true,
   features: ['statistics_revenue', 'statistics_bills', 'statistics_tests', 'statistics_patients'],
   subscription_plan: 'enterprise'
 };

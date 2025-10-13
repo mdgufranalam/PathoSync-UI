@@ -7,16 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 import { Plus, Edit, Trash2 } from 'lucide-react';
 import { usePermissions } from '../hooks/usePermissions';
-import { Role } from '../types/permissions';
-import { apiClient } from '../utils/apiClient';
 
-interface CollectionCenter {
-  id: string;
-  name: string;
-  address: string;
-  contact_person: string;
-  phone: string;
-}
+import { apiClient } from '../utils/apiClient';
+import { CollectionCenter,Role } from '../types/index';
 
 interface CollectionCentersManagementProps {
   currentUser?: {
@@ -50,7 +43,7 @@ export function CollectionCentersManagement({ currentUser: propCurrentUser }: Co
     const fetchCollectionCenters = async () => {
       const response = await apiClient.get('/collection-centers');
       if (response.success) {
-        setCollectionCenters(response.data);
+        setCollectionCenters(response.data as CollectionCenter[]);
       }
     };
     if (permissions.collectionCenters.canView) {
@@ -85,7 +78,7 @@ export function CollectionCentersManagement({ currentUser: propCurrentUser }: Co
       if (!permissions.collectionCenters.canCreate) return;
       const response = await apiClient.post('/collection-centers', formData);
       if (response.success) {
-        setCollectionCenters(prev => [...prev, response.data]);
+        setCollectionCenters(prev => [...prev, response.data as CollectionCenter]);
       }
     }
 

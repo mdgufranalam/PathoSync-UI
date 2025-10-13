@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useBills } from '../hooks/useBills';
-import { Bill, BillStatus, ReportStatus } from '../types';
+import { Bill, BillStatus, ReportStatus } from '../types/index';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -48,30 +48,30 @@ export function BillsManagement() {
     const [viewingReportId, setViewingReportId] = useState<string | null>(null);
 
     const filteredBills = bills.filter(bill => {
-        const patientName = bill.patient?.name || (bill as any).patientName || '';
-        const doctorName = bill.doctor?.name || (bill as any).doctorName || '';
+        const patientName = `${bill.patient?.first_name} ${bill.patient?.last_name}` || '';
+        const doctorName = `${bill.doctor?.first_name} ${bill.doctor?.last_name}` || '';
 
         const matchesSearch =
             patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             bill.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
             doctorName.toLowerCase().includes(searchTerm.toLowerCase());
 
-        const matchesStatus = statusFilter === 'all' || bill.status === statusFilter;
-        const matchesPayment = paymentFilter === 'all' || bill.paymentMethod === paymentFilter;
-        const matchesReportStatus = reportStatusFilter === 'all' || bill.reportStatus === reportStatusFilter;
+        const matchesStatus = statusFilter === 'all' || bill.payment_status === statusFilter;
+        const matchesPayment = paymentFilter === 'all' || bill.payment_method === paymentFilter;
+        const matchesReportStatus = reportStatusFilter === 'all' || bill.status === reportStatusFilter;
 
         const matchesDate = !selectedDate ||
-            new Date(bill.createdAt).toDateString() === selectedDate.toDateString();
+            new Date(bill.created_at).toDateString() === selectedDate.toDateString();
 
         return matchesSearch && matchesStatus && matchesPayment && matchesReportStatus && matchesDate;
     });
 
     const handleStatusChange = (billId: string, newStatus: BillStatus) => {
-        updateBill(billId, { status: newStatus });
+        updateBill(billId, { payment_status: newStatus });
     };
 
     const handleReportStatusChange = (billId: string, newReportStatus: ReportStatus) => {
-        updateBill(billId, { reportStatus: newReportStatus });
+        updateBill(billId, { status: newReportStatus });
     };
 
     const handleViewReport = (bill: Bill) => {
@@ -109,11 +109,11 @@ export function BillsManagement() {
 
     const stats = {
         total: bills.length,
-        paid: bills.filter(b => b.status === 'paid').length,
-        pending: bills.filter(b => b.status === 'unpaid' || b.status === 'partially-paid').length,
-        cancelled: bills.filter(b => b.status === 'cancelled').length,
-        totalAmount: bills.reduce((sum, bill) => sum + (bill.total || bill.finalAmount || 0), 0),
-        reportsPending: bills.filter(b => b.reportStatus === 'pending').length,
+        paid: bills.filter(b => b.payment_status === 'paid').length,
+        pending: bills.filter(b => b.payment_status === 'unpaid' || b.payment_status === 'partially-paid').length,
+        cancelled: bills.filter(b => b.payment_status === 'cancelled').length,
+        totalAmount: bills.reduce((sum, bill) => sum + (bill.total_amount || 0), 0),
+        reportsPending: bills.filter(b => b.status === 'pending').length,
     };
 
     if (isLoading) {
@@ -213,15 +213,15 @@ export function BillsManagement() {
                             {filteredBills.map((bill) => (
                                 <TableRow key={bill.id}>
                                     <TableCell>{bill.id}</TableCell>
-                                    <TableCell>{bill.patient?.name || (bill as any).patientName}</TableCell>
-                                    <TableCell>{bill.doctor?.name || (bill as any).doctorName}</TableCell>
+                                    <TableCell>{`${bill.patient?.first_name} ${bill.patient?.last_name}`}</TableCell>
+                                    <TableCell>{`${bill.doctor?.first_name} ${bill.doctor?.last_name}`}</TableCell>
                                     <TableCell>
-                                        {(bill.tests || []).map(t => ('test' in t ? t.test.name : t.name)).join(', ')}
+                                        {(bill.tests || []).map(t => t.test.name).join(', ')}
                                     </TableCell>
-                                    <TableCell>₹{(bill.total || bill.finalAmount || 0).toFixed(2)}</TableCell>
-                                    <TableCell><Badge className={getStatusColor(bill.status)}>{bill.status}</Badge></TableCell>
-                                    <TableCell><Badge className={getReportStatusColor(bill.reportStatus)}>{bill.reportStatus}</Badge></TableCell>
-                                    <TableCell>{format(new Date(bill.createdAt), 'MMM dd, yyyy')}</TableCell>
+                                    <TableCell>₹{bill.total_amount.toFixed(2)}</TableCell>
+                                    <TableCell><Badge className={getStatusColor(bill.payment_status)}>{bill.payment_status}</Badge></TableCell>
+                                    <TableCell><Badge className={getReportStatusColor(bill.status)}>{bill.status}</Badge></TableCell>
+                                    <TableCell>{format(new Date(bill.created_at), 'MMM dd, yyyy')}</TableCell>
                                     <TableCell>
                                         <Button size="sm" variant="ghost" onClick={() => handleViewReport(bill)}><Eye className="w-4 h-4 mr-2" />View Report</Button>
                                         <DropdownMenu>

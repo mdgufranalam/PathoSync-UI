@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bill, Patient, Doctor, Test, CollectionCenter } from '../types';
+import { Bill, Patient, Doctor, Test, CollectionCenter } from '../types/index';
 import { getPatients, getDoctors, getTests, getCollectionCenters } from '../utils/api';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -16,7 +16,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useBills } from '../hooks/useBills';
 import { useTenant } from '../hooks/useTenant';
 import { toast } from 'sonner';
-import { Page } from '../App';
+import { Page } from '../types/index';
 
 export interface EnhancedBillingProcessProps {
   onBack: () => void;
@@ -66,10 +66,10 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
           getTests(),
           getCollectionCenters(),
         ]);
-        setPatients(patientsData);
-        setDoctors(doctorsData);
-        setAvailableTests(testsData);
-        setCollectionCenters(collectionCentersData);
+        setPatients(patientsData as Patient[]);
+        setDoctors(doctorsData as Doctor[]);
+        setAvailableTests(testsData as Test[]);
+        setCollectionCenters(collectionCentersData as CollectionCenter[]);
       } catch (error) {
         console.error('Error loading data:', error);
       }
@@ -128,9 +128,14 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
       id: 'self-1',
       tenant_id: 'a22a9e89-12f7-443b-9635-6af203657723',
       first_name: 'Dr. Admin',
+      last_name: 'User',
       specialization: 'Administrator',
       email: 'admin@pathosync.com',
       phone: '+91-9876543210',
+      license_number: 'N/A',
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
     setSelectedDoctor(selfDoctor);
     setDoctorSearchTerm('');
@@ -154,11 +159,15 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
       total_amount: total,
       payment_status: 'pending',
       notes,
-      sample_collection_date: sampleDate + 'T' + sampleTime,
-      collection_center_id: selectedCenter?.id,
-      is_home_collection: isHomeCollection,
-      collection_address: isHomeCollection ? collectionAddress : undefined,
-      collection_charges: collectionCharges,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      status: 'pending',
+      tests: selectedTests.map(t => ({...t, test_id: t.test.id})),
+      patient: selectedPatient,
+      doctor: selectedDoctor,
+      tax_amount: tax,
+      discount_amount: discount,
+      payment_method: paymentMethod
     };
 
     // Save the bill to persistent storage

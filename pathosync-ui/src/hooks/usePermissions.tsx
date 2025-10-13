@@ -1,20 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '../utils/apiClient';
-import type { Role } from '../types/permissions';
-
-export interface Permissions {
-    billing: { canView: boolean, canEdit: boolean };
-    bills: { canView: boolean, canEdit: boolean };
-    patients: { canView: boolean, canEdit: boolean };
-    packages: { canView: boolean, canEdit: boolean };
-    reports: { canView: boolean, canEdit: boolean };
-    tests: { canView: boolean, canEdit: boolean };
-    doctors: { canView: boolean, canEdit: boolean };
-    users: { canView: boolean, canEdit: boolean };
-    statistics: { canView: boolean, canEdit: boolean };
-    subscription: { canView: boolean, canEdit: boolean };
-    collectionCenters: { canView: boolean, canEdit: boolean };
-}
+import type { Role, Permissions } from '../types/permissions';
 
 const initialPermissions: Permissions = {
     billing: { canView: false, canEdit: false },

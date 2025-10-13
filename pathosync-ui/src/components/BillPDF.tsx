@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bill, Tenant } from '../types';
+import { Bill, Tenant } from '../types/index';
 
 interface BillPDFProps {
   bill: Bill;
@@ -111,7 +111,7 @@ export function BillPDF({ bill, tenant }: BillPDFProps) {
             )}
             <div className="flex justify-between py-1 border-b border-gray-200">
               <span className="text-gray-600">Tax:</span>
-              <span>₹{bill.total_tax_amount.toFixed(2)}</span>
+              <span>₹{bill.tax_amount.toFixed(2)}</span>
             </div>
             <div className="flex justify-between py-2 border-t-2 border-gray-400 text-xl font-semibold">
               <span>Total Amount:</span>
@@ -167,27 +167,6 @@ export function BillPDF({ bill, tenant }: BillPDFProps) {
           Print Bill
         </button>
       </div>
-
-      {/* Print Styles */}
-      <style jsx>{`
-        @media print {
-          body * {
-            visibility: hidden;
-          }
-          #bill-pdf, #bill-pdf * {
-            visibility: visible;
-          }
-          #bill-pdf {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-          }
-          .print\\:hidden {
-            display: none !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }

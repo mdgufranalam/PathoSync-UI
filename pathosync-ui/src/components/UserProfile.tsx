@@ -20,8 +20,8 @@ import {
   Bell,
   Lock
 } from 'lucide-react';
-import { User } from '../types';
-import { Page } from '../App';
+import { User } from '../types/index';
+import { Page } from '../types/index';
 
 export interface UserProfileProps {
   user: User;
@@ -133,7 +133,7 @@ export function UserProfile({ user, onLogout, onUpdateProfile, onNavigate }: Use
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <Avatar className="w-20 h-20">
-                  <AvatarImage src={user.profilePicture} alt={user.name} />
+                  <AvatarImage src={user.profile_picture} alt={user.name} />
                   <AvatarFallback className="text-lg bg-blue-100 text-blue-600">
                     {user.name.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
@@ -218,7 +218,7 @@ export function UserProfile({ user, onLogout, onUpdateProfile, onNavigate }: Use
                   <Label>Join Date</Label>
                   <div className="flex items-center mt-1 p-2 bg-muted rounded-md">
                     <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
-                    {new Date(user.joinDate).toLocaleDateString()}
+                    {new Date(user.join_date).toLocaleDateString()}
                   </div>
                 </div>
               </div>
