@@ -11,7 +11,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { RichTextEditor } from './ui/rich-text-editor';
 import { DescriptiveTestEditor } from './DescriptiveTestEditor';
 import { TestGroupRenderer } from './TestGroupRenderer';
-import { mockTestsAPI } from '../utils/mockTestsAPI';
 import {
     ArrowLeft,
     Edit,
@@ -142,10 +141,10 @@ export function ReportDetails({ reportId, onBack, bill, onUpdateBill }: ReportDe
                     // If bill has testResults (Enhanced Billing), use them
                     if (bill.testResults && bill.testResults.length > 0) {
                         return bill.testResults.map(tr => {
-                            const test = bill.tests?.find(t => t.testId === tr.testId || t.id === tr.testId);
-                            const testName = test?.test?.name || test?.name || 'Unknown Test';
-                            const referenceRange = test?.test?.normalRange || test?.referenceRange || '';
-                            const unit = test?.test?.unit || test?.unit || '';
+                            const test = bill.tests?.find(t => t.id === tr.testId || t.id === tr.testId);
+                            const testName = test?.testName || test?.testName || 'Unknown Test';
+                            const referenceRange = test?.referenceRanges || '';
+                            const unit = test?.unit || test?.unit || '';
 
                             return {
                                 id: tr.testId,
@@ -162,10 +161,10 @@ export function ReportDetails({ reportId, onBack, bill, onUpdateBill }: ReportDe
                     else if (bill.tests && bill.tests.length > 0) {
                         const baseTests = bill.tests.map((test, index) => ({
                             id: test.id || `test-${index}`,
-                            testName: test.test?.name || test.name || 'Unknown Test',
+                            testName: test?.testName || test?.testName || 'Unknown Test',
                             result: '',
-                            referenceRange: test.test?.normalRange || test.referenceRange || '',
-                            unit: test.test?.unit || test.unit || '',
+                            referenceRange: test?.referenceRanges || '',
+                            unit: test?.unit || test.unit || '',
                             status: 'Normal' as 'Normal' | 'High' | 'Low' | 'Critical',
                             method: 'Standard'
                         }));

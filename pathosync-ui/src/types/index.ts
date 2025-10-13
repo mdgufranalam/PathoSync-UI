@@ -40,23 +40,30 @@ export interface Doctor {
     createdAt: string;
     updatedAt: string;
 }
-
+// Define the structure for reference ranges
+interface ReferenceRange {
+  id: string;
+  name: string;
+  minValue: string;
+  maxValue: string;
+  unit: string;
+}
 export interface Test {
     id: string;
     testName: string;
     testType: 'Numeric' | 'Descriptive' | 'Group';
     shortCode: string;
     price: number;
-    category: string;
-    unit: string;
+    category?: string;
+    unit?: string;
     tag: string;
-    method: string;
-    formula: string;
-    notes: string;
-    description: string;
-    defaultLabResult: string;
-    referenceRanges: any[];
-    subTests: any[];
+    method?: string;
+    formula?: string;
+    notes?: string;
+    description?: string;
+    defaultLabResult?: string;
+    referenceRanges?: ReferenceRange[];
+    subTests?: Test[];
     isActive: boolean;
     createdAt: string;
     updatedAt: string;
