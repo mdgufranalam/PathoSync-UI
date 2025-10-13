@@ -17,107 +17,125 @@ export interface User {
     name: string;
     email: string;
     role: string;
-    createdAt: string;
-    isActive: boolean;
+    created_at: string;
+    is_active: boolean;
     features: string[];
     subscription_plan: string;
     phone: string;
     department: string;
-    joinDate: string;
-    subscriptionPlan: 'starter' | 'basic' | 'professional' | 'enterprise';
-    lastLogin: string;
-    profilePicture: string;
-    organizationName: string;
+    join_date: string;
+    subscription_plan_name: 'starter' | 'basic' | 'professional' | 'enterprise';
+    last_login: string;
+    profile_picture: string;
+    organization_name: string;
     permissions: Permissions;
 }
 
 export interface Bill {
     id: string;
-    patient: Patient;
-    doctor: Doctor;
-    tests: Test[];
-    total: number;
-    finalAmount: number;
-    discount: number;
+    tenant_id: string;
+    patient_id: string;
+    doctor_id: string;
+    bill_number: string;
+    bill_date: string;
+    total_amount: number;
+    discount_amount: number;
+    tax_amount: number;
     status: 'paid' | 'unpaid' | 'partially-paid';
-    reportStatus: 'pending' | 'generated' | 'delivered';
-    createdAt: string;
-    paymentMethod: string;
+    payment_method: string;
     notes: string;
-    subtotal: number;
-    tax: number;
-    sampleDate: string;
-    testResults: any[];
-    clinicalRemarks: string;
-    sampleTime: string;
-    updatedAt: string;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface Test {
     id: string;
-    testName: string;
-    tag: string;
-    price: number;
-    notes: string;
-    referenceRanges: any[];
-    unit: string;
-    isActive: boolean;
-    createdAt: string;
-    updatedAt: string;
-    shortCode: string;
-    testType: string;
-    subTests: any[];
-    method: string;
-    formula: string;
-    defaultLabResult: string;
+    tenant_id: string;
+    test_code: string;
+    name: string;
     description: string;
-    category: string;
+    price: number;
+    test_type: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
+    category_id: string;
 }
 
-export interface Lab {
+export interface Tenant {
+    id: string;
     name: string;
     address: string;
     phone: string;
     email: string;
-    licenseNumber: string;
+    license_number: string;
 }
 
 export interface Patient {
     id: string;
-    name: string;
+    tenant_id: string;
+    first_name: string;
+    last_name: string;
     email: string;
     phone: string;
     address: string;
-    dateOfBirth: string;
+    date_of_birth: string;
     gender: string;
-    emergencyContact: string;
-    createdAt: string;
+    emergency_contact_name: string;
+    emergency_contact_phone: string;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface Doctor {
     id: string;
-    name: string;
+    tenant_id: string;
+    first_name: string;
+    last_name: string;
     specialization: string;
     email: string;
     phone: string;
-    licenseNumber: string;
-    isActive: boolean;
+    license_number: string;
+    is_active: boolean;
+    created_at: string;
+    updated_at: string;
 }
 
-export interface ReferenceRange {}
+export interface ReferenceRange {
+    id: string;
+    test_id: string;
+    name: string;
+    min_value: string;
+    max_value: string;
+    unit: string;
+}
 
 export interface LabReport {
     id: string;
-    reportNo: string;
-    patientName: string;
-    patientAge: string;
-    patientGender: string;
-    doctorName: string;
+    tenant_id: string;
+    bill_id: string;
+    report_number: string;
     status: string;
-    tests: any[];
-    createdAt: string;
-    report_no: string;
-    test_results: any;
-    impression: string;
-    descriptive_content: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface TestCategory {
+    id: string;
+    name: string;
+    description: string;
+}
+
+export interface CollectionCenter {
+    id: string;
+    tenant_id: string;
+    center_code: string;
+    name: string;
+    address: string;
+    phone: string;
+    email: string;
+    is_active: boolean;
+    commission_percentage: number;
+    created_at: string;
+    updated_at: string;
 }

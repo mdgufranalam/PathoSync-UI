@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Bill, Patient, Doctor, Test, Lab } from '../types';
-import { mockTestsAPI } from '../utils/mockTestsAPI';
+import { Bill, Patient, Doctor, Test, CollectionCenter } from '../types';
+import { getPatients, getDoctors, getTests, getCollectionCenters } from '../utils/api';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -14,6 +14,7 @@ import { BillPDF } from './BillPDF';
 import { ArrowLeft, ArrowRight, Search, X, Plus, Minus, FileText, Receipt } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useBills } from '../hooks/useBills';
+import { useTenant } from '../hooks/useTenant';
 import { toast } from 'sonner';
 import { Page } from '../App';
 
@@ -27,6 +28,7 @@ type Step = 1 | 2 | 3 | 4 | 5;
 export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingProcessProps) {
   const { hasPermission } = useAuth();
   const { addBill } = useBills();
+  const { tenant } = useTenant('a22a9e89-12f7-443b-9635-6af203657723');
   const [currentStep, setCurrentStep] = useState<Step>(1);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
@@ -40,6 +42,9 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
   const [showBillPDF, setShowBillPDF] = useState(false);
   const [generatedBill, setGeneratedBill] = useState<Bill | null>(null);
   const [availableTests, setAvailableTests] = useState<Test[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [collectionCenters, setCollectionCenters] = useState<CollectionCenter[]>([]);
   
   // Collection Center selection
   const [selectedCollectionCenter, setSelectedCollectionCenter] = useState<string>('main-lab');
@@ -51,126 +56,40 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
   const [sampleDate, setSampleDate] = useState(new Date().toISOString().split('T')[0]);
   const [sampleTime, setSampleTime] = useState(new Date().toTimeString().slice(0, 5));
 
-  // Mock data
-  const mockPatients: Patient[] = [
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john.doe@email.com',
-      phone: '+1-234-567-8901',
-      address: '123 Main St, City, State 12345',
-      dateOfBirth: '1985-05-15',
-      gender: 'male',
-      emergencyContact: '+1-234-567-8999',
-      createdAt: '2024-01-01T00:00:00Z'
-    },
-    {
-      id: '2',
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@email.com',
-      phone: '+1-234-567-8902',
-      address: '456 Oak Ave, City, State 12345',
-      dateOfBirth: '1990-03-22',
-      gender: 'female',
-      emergencyContact: '+1-234-567-8998',
-      createdAt: '2024-01-02T00:00:00Z'
-    }
-  ];
-
-  const mockDoctors: Doctor[] = [
-    {
-      id: '1',
-      name: 'Dr. Michael Smith',
-      specialization: 'Cardiology',
-      email: 'michael.smith@hospital.com',
-      phone: '+1-234-567-9001',
-      licenseNumber: 'MD-12345',
-      isActive: true,
-    },
-    {
-      id: '2',
-      name: 'Dr. Emily Davis',
-      specialization: 'General Medicine',
-      email: 'emily.davis@hospital.com',
-      phone: '+1-234-567-9002',
-      licenseNumber: 'MD-12346',
-      isActive: true,
-    }
-  ];
-
-  // Mock Collection Centers
-  const mockCollectionCenters = [
-    {
-      id: 'main-lab',
-      code: 'MAIN',
-      name: 'Main Laboratory',
-      address: '123 Medical Center Dr, Health City, HC 12345',
-      charges: 0
-    },
-    {
-      id: 'cc1',
-      code: 'CC001',
-      name: 'PathoCare Collection Center - Andheri',
-      address: '123, S.V. Road, Andheri West, Mumbai - 400058',
-      charges: 50
-    },
-    {
-      id: 'cc2',
-      code: 'CC002', 
-      name: 'PathoCare Collection Center - Borivali',
-      address: '456, Link Road, Borivali East, Mumbai - 400066',
-      charges: 50
-    },
-    {
-      id: 'cc3',
-      code: 'CC003',
-      name: 'PathoCare Collection Center - Thane',
-      address: '789, Ghodbunder Road, Thane West - 400601',
-      charges: 75
-    },
-    {
-      id: 'home-collection',
-      code: 'HOME',
-      name: 'Home Collection Service',
-      address: 'Patient\'s Address',
-      charges: 150
-    }
-  ];
-
-  // Load tests from API
+  // Load data from API
   useEffect(() => {
-    const loadTests = async () => {
+    const loadData = async () => {
       try {
-        const tests = await mockTestsAPI.getAllTests();
-        setAvailableTests(tests);
+        const [patientsData, doctorsData, testsData, collectionCentersData] = await Promise.all([
+          getPatients(),
+          getDoctors(),
+          getTests(),
+          getCollectionCenters(),
+        ]);
+        setPatients(patientsData);
+        setDoctors(doctorsData);
+        setAvailableTests(testsData);
+        setCollectionCenters(collectionCentersData);
       } catch (error) {
-        console.error('Error loading tests:', error);
+        console.error('Error loading data:', error);
       }
     };
-    loadTests();
+    loadData();
   }, []);
 
-  const mockLab: Lab = {
-    name: 'HealthCare SaaS Lab',
-    address: '123 Medical Center Dr, Health City, HC 12345',
-    phone: '+1-800-123-4567',
-    email: 'info@healthcarelab.com',
-    licenseNumber: 'LAB-2024-001'
-  };
-
-  const filteredPatients = mockPatients.filter(p => 
-    p.name.toLowerCase().includes(patientSearchTerm.toLowerCase()) ||
-    p.email.toLowerCase().includes(patientSearchTerm.toLowerCase())
+  const filteredPatients = patients.filter(p => 
+    p.first_name.toLowerCase().includes(patientSearchTerm.toLowerCase()) ||
+    p.email?.toLowerCase().includes(patientSearchTerm.toLowerCase())
   );
 
-  const filteredDoctors = mockDoctors.filter(d => 
-    d.name.toLowerCase().includes(doctorSearchTerm.toLowerCase()) ||
-    d.specialization.toLowerCase().includes(doctorSearchTerm.toLowerCase())
+  const filteredDoctors = doctors.filter(d => 
+    d.first_name.toLowerCase().includes(doctorSearchTerm.toLowerCase()) ||
+    d.specialization?.toLowerCase().includes(doctorSearchTerm.toLowerCase())
   );
 
   const filteredTests = availableTests.filter(t => 
-    t.testName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.category.toLowerCase().includes(searchTerm.toLowerCase())
+    t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    t.test_code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const subtotal = selectedTests.reduce((sum, item) => sum + (item.test.price * item.quantity), 0);
@@ -207,12 +126,11 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
     // Set the current user as the doctor (from App.tsx user data)
     const selfDoctor: Doctor = {
       id: 'self-1',
-      name: 'Dr. Admin',
+      tenant_id: 'a22a9e89-12f7-443b-9635-6af203657723',
+      first_name: 'Dr. Admin',
       specialization: 'Administrator',
       email: 'admin@pathosync.com',
       phone: '+91-9876543210',
-      licenseNumber: 'ADMIN-001',
-      isActive: true,
     };
     setSelectedDoctor(selfDoctor);
     setDoctorSearchTerm('');
@@ -224,41 +142,23 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
       return;
     }
 
-    const selectedCenter = mockCollectionCenters.find(c => c.id === selectedCollectionCenter);
+    const selectedCenter = collectionCenters.find(c => c.id === selectedCollectionCenter);
     
     const bill: Bill = {
       id: `BILL-${Date.now()}`,
-      patient: selectedPatient,
-      doctor: selectedDoctor,
-      tests: selectedTests,
+      tenant_id: 'a22a9e89-12f7-443b-9635-6af203657723',
+      patient_id: selectedPatient.id,
+      doctor_id: selectedDoctor.id,
+      bill_number: `BILL-${Date.now()}`,
       subtotal: subtotalWithCollection,
-      tax,
-      discount,
-      total,
-      finalAmount: total, // Assuming finalAmount is the same as total for now
-      status: 'pending',
-      paymentMethod,
+      total_amount: total,
+      payment_status: 'pending',
       notes,
-      sampleDate,
-      sampleTime,
-      collectionCenter: selectedCenter ? {
-        id: selectedCenter.id,
-        code: selectedCenter.code,
-        name: selectedCenter.name,
-        address: selectedCenter.address
-      } : undefined,
-      isHomeCollection,
-      collectionAddress: isHomeCollection ? collectionAddress : undefined,
-      collectionCharges,
-      reportStatus: 'Initial',
-      testResults: selectedTests.map(item => ({
-        testId: item.test.id,
-        result: '',
-        isAbnormal: false
-      })),
-      clinicalRemarks: '',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      sample_collection_date: sampleDate + 'T' + sampleTime,
+      collection_center_id: selectedCenter?.id,
+      is_home_collection: isHomeCollection,
+      collection_address: isHomeCollection ? collectionAddress : undefined,
+      collection_charges: collectionCharges,
     };
 
     // Save the bill to persistent storage
@@ -297,7 +197,7 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4>{patient.name}</h4>
+                        <h4>{patient.first_name} {patient.last_name}</h4>
                         <p className="text-muted-foreground">{patient.email}</p>
                         <p className="text-muted-foreground">{patient.phone}</p>
                       </div>
@@ -309,7 +209,7 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
               
               {selectedPatient && (
                 <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p><strong>Selected:</strong> {selectedPatient.name}</p>
+                  <p><strong>Selected:</strong> {selectedPatient.first_name} {selectedPatient.last_name}</p>
                   <p>{selectedPatient.email} | {selectedPatient.phone}</p>
                 </div>
               )}
@@ -365,11 +265,11 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4>{doctor.name}</h4>
+                        <h4>{doctor.first_name} {doctor.last_name}</h4>
                         <p className="text-muted-foreground">{doctor.specialization}</p>
                         <p className="text-muted-foreground">{doctor.email}</p>
                       </div>
-                      <Badge variant="outline">{doctor.licenseNumber}</Badge>
+                      <Badge variant="outline">{doctor.license_number}</Badge>
                     </div>
                   </div>
                 ))}
@@ -382,7 +282,7 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
               
               {selectedDoctor && (
                 <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p><strong>Selected:</strong> {selectedDoctor.name}</p>
+                  <p><strong>Selected:</strong> {selectedDoctor.first_name} {selectedDoctor.last_name}</p>
                   <p>{selectedDoctor.specialization} | {selectedDoctor.email}</p>
                 </div>
               )}
@@ -413,10 +313,10 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
                     <div key={test.id} className="p-3 border rounded-lg">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <h4>{test.testName}</h4>
-                          <p className="text-muted-foreground">{test.description}</p>
+                          <h4>{test.name}</h4>
+                          <p className="text-muted-foreground">{test.test_code}</p>
                           <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline">{test.category}</Badge>
+                            <Badge variant="outline">{test.category_id}</Badge>
                             <span>₹{test.price}</span>
                           </div>
                         </div>
@@ -442,7 +342,7 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
                     {selectedTests.map((item) => (
                       <div key={item.test.id} className="flex items-center justify-between p-3 border rounded-lg">
                         <div className="flex-1">
-                          <h5>{item.test.testName}</h5>
+                          <h5>{item.test.name}</h5>
                           <p className="text-muted-foreground">₹{item.test.price} each</p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -501,7 +401,7 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
                   <TableBody>
                     {selectedTests.map((item) => (
                       <TableRow key={item.test.id}>
-                        <TableCell>{item.test.testName}</TableCell>
+                        <TableCell>{item.test.name}</TableCell>
                         <TableCell>{item.quantity}</TableCell>
                         <TableCell>₹{item.test.price}</TableCell>
                         <TableCell>₹{item.quantity * item.test.price}</TableCell>
@@ -521,9 +421,9 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
                       value={selectedCollectionCenter} 
                       onValueChange={(value) => {
                         setSelectedCollectionCenter(value);
-                        const center = mockCollectionCenters.find(c => c.id === value);
+                        const center = collectionCenters.find(c => c.id === value);
                         if (center) {
-                          setCollectionCharges(center.charges);
+                          setCollectionCharges(center.commission_percentage || 0);
                           setIsHomeCollection(value === 'home-collection');
                         }
                       }}
@@ -532,15 +432,15 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
                         <SelectValue placeholder="Select collection center" />
                       </SelectTrigger>
                       <SelectContent>
-                        {mockCollectionCenters.map((center) => (
+                        {collectionCenters.map((center) => (
                           <SelectItem key={center.id} value={center.id}>
                             <div className="flex justify-between items-center w-full">
                               <div>
-                                <span className="font-medium">{center.code}</span> - {center.name}
+                                <span className="font-medium">{center.center_code}</span> - {center.name}
                               </div>
-                              {center.charges > 0 && (
+                              {center.commission_percentage && center.commission_percentage > 0 && (
                                 <span className="text-sm text-muted-foreground ml-2">
-                                  +₹{center.charges}
+                                  +₹{center.commission_percentage}
                                 </span>
                               )}
                             </div>
@@ -550,7 +450,7 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
                     </Select>
                     {selectedCollectionCenter && (
                       <p className="text-sm text-muted-foreground mt-1">
-                        {mockCollectionCenters.find(c => c.id === selectedCollectionCenter)?.address}
+                        {collectionCenters.find(c => c.id === selectedCollectionCenter)?.address}
                       </p>
                     )}
                   </div>
@@ -708,8 +608,8 @@ export function EnhancedBillingProcess({ onBack, onNavigate }: EnhancedBillingPr
                           Review the bill details before printing or saving.
                         </DialogDescription>
                       </DialogHeader>
-                      {generatedBill && (
-                        <BillPDF bill={generatedBill} lab={mockLab} />
+                      {generatedBill && tenant && (
+                        <BillPDF bill={generatedBill} tenant={tenant} />
                       )}
                     </DialogContent>
                   </Dialog>

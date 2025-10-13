@@ -1,12 +1,12 @@
 import React from 'react';
-import { Bill, Lab } from '../types';
+import { Bill, Tenant } from '../types';
 
 interface BillPDFProps {
   bill: Bill;
-  lab: Lab;
+  tenant: Tenant;
 }
 
-export function BillPDF({ bill, lab }: BillPDFProps) {
+export function BillPDF({ bill, tenant }: BillPDFProps) {
   const printBill = () => {
     window.print();
   };
@@ -17,19 +17,19 @@ export function BillPDF({ bill, lab }: BillPDFProps) {
       <div className="border-b pb-6 mb-6">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl text-blue-600 mb-2">{lab.name}</h1>
+            <h1 className="text-3xl text-blue-600 mb-2">{tenant.name}</h1>
             <div className="text-gray-600 space-y-1">
-              <p>{lab.address}</p>
-              <p>Phone: {lab.phone} | Email: {lab.email}</p>
-              <p>License No: {lab.licenseNumber}</p>
+              <p>{tenant.address}</p>
+              <p>Phone: {tenant.phone} | Email: {tenant.email}</p>
+              <p>License No: {tenant.license_number}</p>
             </div>
           </div>
           <div className="text-right">
             <h2 className="text-2xl mb-2">BILL</h2>
             <div className="text-gray-600">
               <p>Bill ID: {bill.id}</p>
-              <p>Date: {new Date(bill.createdAt).toLocaleDateString()}</p>
-              <p>Time: {new Date(bill.createdAt).toLocaleTimeString()}</p>
+              <p>Date: {new Date(bill.created_at).toLocaleDateString()}</p>
+              <p>Time: {new Date(bill.created_at).toLocaleTimeString()}</p>
             </div>
           </div>
         </div>
@@ -40,11 +40,11 @@ export function BillPDF({ bill, lab }: BillPDFProps) {
         <div>
           <h3 className="text-lg mb-3 text-gray-800 border-b pb-1">Patient Information</h3>
           <div className="space-y-2 text-gray-600">
-            <p><span className="font-medium">Name:</span> {bill.patient?.name}</p>
+            <p><span className="font-medium">Name:</span> {bill.patient?.first_name} {bill.patient?.last_name}</p>
             <p><span className="font-medium">Email:</span> {bill.patient?.email}</p>
             <p><span className="font-medium">Phone:</span> {bill.patient?.phone}</p>
-                      <p><span className="font-medium">Address:</span> {bill.patient?.address}</p>
-                      <p><span className="font-medium">Date of Birth:</span> {new Date(bill.patient.dateOfBirth).toLocaleDateString()}</p>
+            <p><span className="font-medium">Address:</span> {bill.patient?.address}</p>
+            <p><span className="font-medium">Date of Birth:</span> {new Date(bill.patient.date_of_birth).toLocaleDateString()}</p>
             <p><span className="font-medium">Gender:</span> {bill.patient?.gender.charAt(0).toUpperCase() + bill.patient.gender.slice(1)}</p>
           </div>
         </div>
@@ -52,11 +52,11 @@ export function BillPDF({ bill, lab }: BillPDFProps) {
         <div>
           <h3 className="text-lg mb-3 text-gray-800 border-b pb-1">Doctor Information</h3>
           <div className="space-y-2 text-gray-600">
-            <p><span className="font-medium">Name:</span> {bill.doctor?.name}</p>
+            <p><span className="font-medium">Name:</span> {bill.doctor?.first_name} {bill.doctor?.last_name}</p>
             <p><span className="font-medium">Specialization:</span> {bill.doctor?.specialization}</p>
             <p><span className="font-medium">Email:</span> {bill.doctor?.email}</p>
             <p><span className="font-medium">Phone:</span> {bill.doctor?.phone}</p>
-            <p><span className="font-medium">License No:</span> {bill.doctor?.licenseNumber}</p>
+            <p><span className="font-medium">License No:</span> {bill.doctor?.license_number}</p>
           </div>
         </div>
       </div>
@@ -84,7 +84,7 @@ export function BillPDF({ bill, lab }: BillPDFProps) {
                       <p className="text-sm text-gray-500">{item.test.description}</p>
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-gray-600">{item.test.category}</td>
+                  <td className="py-3 px-4 text-gray-600">{item.test.category_id}</td>
                   <td className="py-3 px-4 text-center">{item.quantity}</td>
                   <td className="py-3 px-4 text-right">₹{item.test.price.toFixed(2)}</td>
                   <td className="py-3 px-4 text-right">₹{(item.quantity * item.price).toFixed(2)}</td>
@@ -103,19 +103,19 @@ export function BillPDF({ bill, lab }: BillPDFProps) {
               <span className="text-gray-600">Subtotal:</span>
               <span>₹{bill.subtotal.toFixed(2)}</span>
             </div>
-            {bill.discount > 0 && (
+            {bill.discount_amount > 0 && (
               <div className="flex justify-between py-1 border-b border-gray-200 text-green-600">
                 <span>Discount:</span>
-                <span>-₹{bill.discount.toFixed(2)}</span>
+                <span>-₹{bill.discount_amount.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between py-1 border-b border-gray-200">
               <span className="text-gray-600">Tax:</span>
-              <span>₹{bill.tax.toFixed(2)}</span>
+              <span>₹{bill.total_tax_amount.toFixed(2)}</span>
             </div>
             <div className="flex justify-between py-2 border-t-2 border-gray-400 text-xl font-semibold">
               <span>Total Amount:</span>
-              <span>₹{bill.total.toFixed(2)}</span>
+              <span>₹{bill.total_amount.toFixed(2)}</span>
             </div>
           </div>
         </div>
@@ -128,15 +128,15 @@ export function BillPDF({ bill, lab }: BillPDFProps) {
           <div className="space-y-2 text-gray-600">
             <p><span className="font-medium">Status:</span> 
               <span className={`ml-2 px-2 py-1 rounded text-sm ${
-                bill.status === 'paid' ? 'bg-green-100 text-green-800' :
-                bill.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                bill.payment_status === 'paid' ? 'bg-green-100 text-green-800' :
+                bill.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                 'bg-red-100 text-red-800'
               }`}>
-                {bill.status.charAt(0).toUpperCase() + bill.status.slice(1)}
+                {bill.payment_status.charAt(0).toUpperCase() + bill.payment_status.slice(1)}
               </span>
             </p>
-            {bill.paymentMethod && (
-              <p><span className="font-medium">Payment Method:</span> {bill.paymentMethod.charAt(0).toUpperCase() + bill.paymentMethod.slice(1)}</p>
+            {bill.payment_method && (
+              <p><span className="font-medium">Payment Method:</span> {bill.payment_method.charAt(0).toUpperCase() + bill.payment_method.slice(1)}</p>
             )}
           </div>
         </div>
@@ -152,9 +152,9 @@ export function BillPDF({ bill, lab }: BillPDFProps) {
       {/* Footer */}
       <div className="border-t pt-6 mt-8">
         <div className="text-center text-gray-500 space-y-2">
-          <p>Thank you for choosing {lab.name}</p>
+          <p>Thank you for choosing {tenant.name}</p>
           <p className="text-sm">This is a computer-generated bill and does not require a signature.</p>
-          <p className="text-sm">For any queries, please contact us at {lab.phone} or {lab.email}</p>
+          <p className="text-sm">For any queries, please contact us at {tenant.phone} or {tenant.email}</p>
         </div>
       </div>
 

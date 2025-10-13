@@ -28,7 +28,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { apiClient } from '../utils/apiClient';
 import { usePermissions } from '../hooks/usePermissions';
 import { Role } from '../types/permissions';
-import { Test, ReferenceRange } from '../types';
+import { Test, TestCategory, ReferenceRange } from '../types';
 
 interface TestsManagementProps {
   currentUser?: {
@@ -36,9 +36,6 @@ interface TestsManagementProps {
     id: string;
   };
 }
-
-// Mock categories for now, replace with API call if available
-const mockTestCategories = ["Hematology", "Biochemistry", "Microbiology", "Serology", "Immunology", "Endocrinology"];
 
 export function TestsManagement({ currentUser: propCurrentUser }: TestsManagementProps = {}) {
     const currentUser = propCurrentUser || {
@@ -52,6 +49,7 @@ export function TestsManagement({ currentUser: propCurrentUser }: TestsManagemen
     });
 
     const [tests, setTests] = useState<Test[]>([]);
+    const [categories, setCategories] = useState<TestCategory[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedTestType, setSelectedTestType] = useState('all');
@@ -59,79 +57,65 @@ export function TestsManagement({ currentUser: propCurrentUser }: TestsManagemen
     const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
     const [editingTest, setEditingTest] = useState<Test | null>(null);
 
-    const [formData, setFormData] = useState<Omit<Test, 'id' | 'isActive' | 'createdAt' | 'updatedAt'>>({
-        testType: 'Normal Test',
-        testName: '',
-        shortCode: '',
+    const [formData, setFormData] = useState<Omit<Test, 'id' | 'is_active' | 'created_at' | 'updated_at'>>({
+        tenant_id: 'a22a9e89-12f7-443b-9635-6af203657723', // Add tenant_id
+        test_code: '',
+        name: '',
+        test_type: 'normal',
         price: 0,
-        unit: '',
-        tag: '',
-        method: '',
-        formula: '',
-        notes: '',
-        defaultLabResult: '',
-        referenceRanges: [],
-        subTests: []
     });
 
     useEffect(() => {
-        const loadTests = async () => {
+        const loadData = async () => {
             try {
                 setLoading(true);
-                const response = await apiClient.get('/tests');
-                if (response.success) {
-                  setTests(response.data);
+                const [testsResponse, categoriesResponse] = await Promise.all([
+                    apiClient.get('/tests'),
+                    apiClient.get('/test-categories'),
+                ]);
+
+                if (testsResponse.success) {
+                    setTests(testsResponse.data);
+                }
+
+                if (categoriesResponse.success) {
+                    setCategories(categoriesResponse.data);
                 }
             } catch (error) {
-                console.error('Error loading tests:', error);
+                console.error('Error loading data:', error);
             } finally {
                 setLoading(false);
             }
         };
 
         if (permissions.tests.canView) {
-            loadTests();
+            loadData();
         }
     }, [permissions.tests.canView]);
 
-    const categories = mockTestCategories;
-
     const filteredTests = tests.filter(test => {
         const matchesSearch =
-            test.testName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (test.shortCode && test.shortCode.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            test.tag.toLowerCase().includes(searchTerm.toLowerCase());
+            test.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (test.test_code && test.test_code.toLowerCase().includes(searchTerm.toLowerCase()));
 
-        const matchesType = selectedTestType === 'all' || test.testType === selectedTestType;
+        const matchesType = selectedTestType === 'all' || test.test_type === selectedTestType;
 
         return matchesSearch && matchesType;
     });
 
     const resetForm = () => {
         setFormData({
-            testType: 'Normal Test',
-            testName: '',
-            shortCode: '',
+            tenant_id: 'a22a9e89-12f7-443b-9635-6af203657723', // Reset tenant_id
+            test_code: '',
+            name: '',
+            test_type: 'normal',
             price: 0,
-            unit: '',
-            tag: '',
-            method: '',
-            formula: '',
-            notes: '',
-            defaultLabResult: '',
-            referenceRanges: [],
-            subTests: []
         });
         setEditingTest(null);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
-        if (formData.testType === 'Test Group' && formData.subTests.length === 0) {
-            alert('Test Group must have at least one sub-test');
-            return;
-        }
 
         try {
             if (editingTest) {
@@ -164,18 +148,11 @@ export function TestsManagement({ currentUser: propCurrentUser }: TestsManagemen
         if (!permissions.tests.canEdit) return;
         setEditingTest(test);
         setFormData({
-            testType: test.testType,
-            testName: test.testName,
-            shortCode: test.shortCode,
+            tenant_id: test.tenant_id,
+            test_code: test.test_code,
+            name: test.name,
+            test_type: test.test_type,
             price: test.price,
-            unit: test.unit || '',
-            tag: test.tag,
-            method: test.method || '',
-            formula: test.formula || '',
-            notes: test.notes || '',
-            defaultLabResult: test.defaultLabResult || '',
-            referenceRanges: test.referenceRanges || [],
-            subTests: test.subTests || []
         });
         setIsAddModalOpen(true);
     };
@@ -200,7 +177,7 @@ export function TestsManagement({ currentUser: propCurrentUser }: TestsManagemen
         try {
             const test = tests.find(t => t.id === testId);
             if (test) {
-                const response = await apiClient.patch(`/tests/${testId}`, { isActive: !test.isActive });
+                const response = await apiClient.patch(`/tests/${testId}/status`, { is_active: !test.is_active });
                 if (response.success) {
                   const updatedTest = response.data;
                   setTests(prev => prev.map(t => t.id === testId ? updatedTest : t));
@@ -210,9 +187,7 @@ export function TestsManagement({ currentUser: propCurrentUser }: TestsManagemen
             console.error('Error updating test status:', error);
             alert('Error updating test status. Please try again.');
         }
-    };
-    
-    // ... (rest of the functions for reference ranges and sub-tests remain the same)
+    }; 
 
     if (!permissions.tests.canView) {
         return (
