@@ -8,7 +8,7 @@ if (!accountSid || !authToken || !twilioPhoneNumber) {
   console.error('Twilio credentials are missing. Make sure to set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER environment variables.');
 }
 
-const client = twilio(accountSid, authToken);
+// const client = twilio(accountSid, authToken);
 
 /**
  * Sends a text message via WhatsApp.
@@ -17,6 +17,7 @@ const client = twilio(accountSid, authToken);
  * @returns {Promise<object>} The Twilio message object.
  */
 const sendTextMessage = async (to, body) => {
+  /*
   try {
     const message = await client.messages.create({
       from: twilioPhoneNumber,
@@ -29,6 +30,9 @@ const sendTextMessage = async (to, body) => {
     console.error('Error sending WhatsApp text message:', error.message);
     throw new Error('Failed to send WhatsApp message.');
   }
+  */
+    console.log('Twilio is not configured. Skipping sending text message.');
+    return Promise.resolve({});
 };
 
 /**
@@ -38,6 +42,7 @@ const sendTextMessage = async (to, body) => {
  * @returns {Promise<object>} The Twilio message object.
  */
 const sendPdfMessage = async (to, mediaUrl) => {
+  /*
   try {
     const message = await client.messages.create({
       from: twilioPhoneNumber,
@@ -50,6 +55,9 @@ const sendPdfMessage = async (to, mediaUrl) => {
     console.error('Error sending WhatsApp PDF message:', error.message);
     throw new Error('Failed to send WhatsApp PDF.');
   }
+  */
+    console.log('Twilio is not configured. Skipping sending PDF.');
+    return Promise.resolve({});
 };
 
 module.exports = {

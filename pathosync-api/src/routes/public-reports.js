@@ -1,1 +1,78 @@
-const express = require(\'express\');\nconst router = express.Router();\nconst { supabase } = require(\'../supabaseClient\');\nconst { generatePdfFromHtml } = require(\'../pdfService\');\n\n// Public endpoint to get report details (for UI)\nrouter.get(\'/:reportId\', async (req, res) => {\n  const { reportId } = req.params;\n  try {\n    // We only need to check if the report exists and is completed.\n    const { data: report, error } = await supabase\n      .from(\'reports\')\n      .select(\'id, status\')\n      .eq(\'id\', reportId)\n      .single();\n\n    if (error || !report) {\n      return res.status(404).json({ message: \'Report not found.\' });\n    }\n\n    if (report.status !== \'Completed\') {\n        return res.status(403).json({ message: \'Report is not yet available for download.\' });\n    }\n\n    res.status(200).json({ message: \'Report is available.\' });\n\n  } catch (err) {\n    console.error(\'Error fetching report for public view:\', err.message);\n    res.status(500).send(\'Server Error\');\n  }\n});\n\n// Public endpoint to download a report with mobile verification\nrouter.post(\'/:reportId/download\', async (req, res) => {\n  const { reportId } = req.params;\n  const { mobileNumber } = req.body;\n\n  if (!mobileNumber) {\n      return res.status(400).json({ message: \'Mobile number is required.\' });\n  }\n\n  try {\n    // Verify the mobile number matches the patient associated with the report\n    const { data: report, error: reportError } = await supabase\n        .from(\'reports\')\n        .select(\`\n            id, status, content, \n            patient:patients ( mobile ) \n        \`)\n        .eq(\'id\', reportId)\n        .single();\n\n    if (reportError || !report) {\n        return res.status(404).json({ message: \'Report not found.\' });\n    }\n    \n    if (report.patient.mobile !== mobileNumber) {\n        return res.status(403).json({ message: \'The mobile number does not match our records for this report.\' });\n    }\n\n    if (report.status !== \'Completed\') {\n        return res.status(403).json({ message: \'Report is not yet available for download.\' });\n    }\n\n    // Generate the PDF with the QR code\n    const pdfBuffer = await generatePdfFromHtml(report.content, report.id);\n\n    res.setHeader(\'Content-Type\', \'application/pdf\');\n    res.setHeader(\'Content-Disposition\', `attachment; filename=report-${report.id}.pdf`);\n    res.send(pdfBuffer);\n\n  } catch (err) {\n    console.error(\'Error generating or downloading public report:\', err.message);\n    res.status(500).send(\'Server Error\');\n  }\n});\n\nmodule.exports = router;\n
+const express = require('express');
+const router = express.Router();
+const { supabase } = require('../supabaseClient');
+const { generatePdfFromHtml } = require('../pdfService');
+
+// Public endpoint to get report details (for UI)
+router.get('/:reportId', async (req, res) => {
+  const { reportId } = req.params;
+  try {
+    // We only need to check if the report exists and is completed.
+    const { data: report, error } = await supabase
+      .from('reports')
+      .select('id, status')
+      .eq('id', reportId)
+      .single();
+
+    if (error || !report) {
+      return res.status(404).json({ message: 'Report not found.' });
+    }
+
+    if (report.status !== 'Completed') {
+        return res.status(403).json({ message: 'Report is not yet available for download.' });
+    }
+
+    res.status(200).json({ message: 'Report is available.' });
+
+  } catch (err) {
+    console.error('Error fetching report for public view:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+// Public endpoint to download a report with mobile verification
+router.post('/:reportId/download', async (req, res) => {
+  const { reportId } = req.params;
+  const { mobileNumber } = req.body;
+
+  if (!mobileNumber) {
+      return res.status(400).json({ message: 'Mobile number is required.' });
+  }
+
+  try {
+    // Verify the mobile number matches the patient associated with the report
+    const { data: report, error: reportError } = await supabase
+        .from('reports')
+        .select(`
+            id, status, content, 
+            patient:patients ( mobile ) 
+        `)
+        .eq('id', reportId)
+        .single();
+
+    if (reportError || !report) {
+        return res.status(404).json({ message: 'Report not found.' });
+    }
+    
+    if (report.patient.mobile !== mobileNumber) {
+        return res.status(403).json({ message: 'The mobile number does not match our records for this report.' });
+    }
+
+    if (report.status !== 'Completed') {
+        return res.status(403).json({ message: 'Report is not yet available for download.' });
+    }
+
+    // Generate the PDF with the QR code
+    const pdfBuffer = await generatePdfFromHtml(report.content, report.id);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=report-${report.id}.pdf`);
+    res.send(pdfBuffer);
+
+  } catch (err) {
+    console.error('Error generating or downloading public report:', err.message);
+    res.status(500).send('Server Error');
+  }
+});
+
+module.exports = router;

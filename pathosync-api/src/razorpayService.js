@@ -8,19 +8,13 @@ if (!razorpayKeyId || !razorpayKeySecret) {
   console.error('Razorpay credentials are missing. Make sure to set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables.');
 }
 
-const razorpay = new Razorpay({
-  key_id: razorpayKeyId,
-  key_secret: razorpayKeySecret,
-});
+// const razorpay = new Razorpay({
+//   key_id: razorpayKeyId,
+//   key_secret: razorpayKeySecret,
+// });
 
-/**
- * Creates a Razorpay order.
- * @param {number} amount - The order amount in the smallest currency unit (e.g., paise for INR).
- * @param {string} currency - The currency of the order (e.g., 'INR').
- * @param {string} receipt - A unique receipt ID for the order.
- * @returns {Promise<object>} The Razorpay order object.
- */
 const createOrder = async (amount, currency, receipt) => {
+  /*
   const options = {
     amount, // amount in the smallest currency unit
     currency,
@@ -34,15 +28,13 @@ const createOrder = async (amount, currency, receipt) => {
     console.error('Error creating Razorpay order:', error.message);
     throw new Error('Failed to create Razorpay order.');
   }
+  */
+  console.log('Razorpay is not configured. Skipping creating order.');
+  return Promise.resolve({ id: `mock_order_${shortid.generate()}` });
 };
 
-/**
- * Processes a full or partial refund.
- * @param {string} paymentId - The ID of the payment to be refunded.
- * @param {number} [amount] - The amount to be refunded. If not provided, a full refund is processed.
- * @returns {Promise<object>} The Razorpay refund object.
- */
 const processRefund = async (paymentId, amount) => {
+  /*
   try {
     const refund = await razorpay.payments.refund(paymentId, {
       amount,
@@ -53,6 +45,9 @@ const processRefund = async (paymentId, amount) => {
     console.error('Error processing Razorpay refund:', error.message);
     throw new Error('Failed to process Razorpay refund.');
   }
+  */
+  console.log('Razorpay is not configured. Skipping processing refund.');
+  return Promise.resolve({ id: `mock_refund_${shortid.generate()}` });
 };
 
 module.exports = {
