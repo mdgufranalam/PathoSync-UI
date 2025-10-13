@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Doctor } from '../types';
+import { Doctor } from '../types/index';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -9,7 +9,7 @@ import { Badge } from './ui/badge';
 import { Edit, Trash2, Plus, Search } from 'lucide-react';
 import { apiClient } from '../utils/apiClient';
 import { usePermissions } from '../hooks/usePermissions';
-import { Role } from '../types/permissions';
+import { ROLES } from '../types/permissions';
 
 interface DoctorsManagementProps {
   currentUser?: {
@@ -20,12 +20,12 @@ interface DoctorsManagementProps {
 
 export function DoctorsManagement({ currentUser: propCurrentUser }: DoctorsManagementProps = {}) {
   const currentUser = propCurrentUser || {
-    role: 'admin' as Role,
+    role: 'admin' as keyof typeof ROLES,
     id: 'current-user-id'
   };
 
   const { permissions } = usePermissions({
-    userRole: currentUser.role as Role,
+    userRole: currentUser.role,
     userId: currentUser.id
   });
 
@@ -35,18 +35,19 @@ export function DoctorsManagement({ currentUser: propCurrentUser }: DoctorsManag
   const [editingDoctor, setEditingDoctor] = useState<Doctor | null>(null);
 
   const [formData, setFormData] = useState({
-    name: '',
+    first_name: '',
+    last_name: '',
     specialization: '',
     email: '',
     phone: '',
-    licenseNumber: ''
+    license_number: ''
   });
 
   useEffect(() => {
     const fetchDoctors = async () => {
       const response = await apiClient.get('/doctors');
       if (response.success) {
-        setDoctors(response.data);
+        setDoctors(response.data as Doctor[]);
       }
     };
     if (permissions.doctors.canView) {
@@ -55,7 +56,7 @@ export function DoctorsManagement({ currentUser: propCurrentUser }: DoctorsManag
   }, [permissions.doctors.canView]);
 
   const filteredDoctors = doctors.filter(doctor =>
-    doctor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    `${doctor.first_name} ${doctor.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     doctor.specialization.toLowerCase().includes(searchTerm.toLowerCase()) ||
     doctor.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -69,7 +70,7 @@ export function DoctorsManagement({ currentUser: propCurrentUser }: DoctorsManag
       if (response.success) {
         setDoctors(prev => prev.map(doctor => 
           doctor.id === editingDoctor.id 
-            ? { ...doctor, ...formData, updatedAt: new Date().toISOString() }
+            ? { ...doctor, ...formData, updated_at: new Date().toISOString() }
             : doctor
         ));
       }
@@ -78,11 +79,11 @@ export function DoctorsManagement({ currentUser: propCurrentUser }: DoctorsManag
       const response = await apiClient.post('/doctors', formData);
       if (response.success) {
         const newDoctor: Doctor = {
-            id: response.data.id,
+            id: (response.data as Doctor).id,
             ...formData,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
         };
         setDoctors(prev => [...prev, newDoctor]);
       }
@@ -93,11 +94,12 @@ export function DoctorsManagement({ currentUser: propCurrentUser }: DoctorsManag
 
   const resetForm = () => {
     setFormData({
-      name: '',
+      first_name: '',
+      last_name: '',
       specialization: '',
       email: '',
       phone: '',
-      licenseNumber: ''
+      license_number: ''
     });
     setEditingDoctor(null);
     setDialogOpen(false);
@@ -107,11 +109,12 @@ export function DoctorsManagement({ currentUser: propCurrentUser }: DoctorsManag
     if (!permissions.doctors.canEdit) return;
     setEditingDoctor(doctor);
     setFormData({
-      name: doctor.name,
+      first_name: doctor.first_name,
+      last_name: doctor.last_name,
       specialization: doctor.specialization,
       email: doctor.email,
       phone: doctor.phone,
-      licenseNumber: doctor.licenseNumber
+      license_number: doctor.license_number
     });
     setDialogOpen(true);
   };
@@ -130,11 +133,11 @@ export function DoctorsManagement({ currentUser: propCurrentUser }: DoctorsManag
     if (!permissions.doctors.canEdit) return;
     const doctor = doctors.find(doc => doc.id === id);
     if (doctor) {
-      const response = await apiClient.patch(`/doctors/${id}`, { isActive: !doctor.isActive });
+      const response = await apiClient.patch(`/doctors/${id}`, { is_active: !doctor.is_active });
       if (response.success) {
         setDoctors(prev => prev.map(doc => 
           doc.id === id 
-            ? { ...doc, isActive: !doc.isActive, updatedAt: new Date().toISOString() }
+            ? { ...doc, is_active: !doc.is_active, updated_at: new Date().toISOString() }
             : doc
         ));
       }
@@ -178,11 +181,20 @@ export function DoctorsManagement({ currentUser: propCurrentUser }: DoctorsManag
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label htmlFor="name">Full Name</label>
+                  <label htmlFor="first_name">First Name</label>
                   <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                    id="first_name"
+                    value={formData.first_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="last_name">Last Name</label>
+                  <Input
+                    id="last_name"
+                    value={formData.last_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
                     required
                   />
                 </div>
@@ -215,11 +227,11 @@ export function DoctorsManagement({ currentUser: propCurrentUser }: DoctorsManag
                   />
                 </div>
                 <div>
-                  <label htmlFor="licenseNumber">License Number</label>
+                  <label htmlFor="license_number">License Number</label>
                   <Input
-                    id="licenseNumber"
-                    value={formData.licenseNumber}
-                    onChange={(e) => setFormData(prev => ({ ...prev, licenseNumber: e.target.value }))}
+                    id="license_number"
+                    value={formData.license_number}
+                    onChange={(e) => setFormData(prev => ({ ...prev, license_number: e.target.value }))}
                     required
                   />
                 </div>
@@ -269,18 +281,18 @@ export function DoctorsManagement({ currentUser: propCurrentUser }: DoctorsManag
             <TableBody>
               {filteredDoctors.map((doctor) => (
                 <TableRow key={doctor.id}>
-                  <TableCell>{doctor.name}</TableCell>
+                  <TableCell>{`${doctor.first_name} ${doctor.last_name}`}</TableCell>
                   <TableCell>{doctor.specialization}</TableCell>
                   <TableCell>{doctor.email}</TableCell>
                   <TableCell>{doctor.phone}</TableCell>
-                  <TableCell>{doctor.licenseNumber}</TableCell>
+                  <TableCell>{doctor.license_number}</TableCell>
                   <TableCell>
                     <Badge 
-                      variant={doctor.isActive ? "default" : "secondary"}
+                      variant={doctor.is_active ? "default" : "secondary"}
                       className="cursor-pointer"
                       onClick={() => toggleStatus(doctor.id)}
                     >
-                      {doctor.isActive ? 'Active' : 'Inactive'}
+                      {doctor.is_active ? 'Active' : 'Inactive'}
                     </Badge>
                   </TableCell>
                   <TableCell>

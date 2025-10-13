@@ -9,10 +9,10 @@ import { Checkbox } from './ui/checkbox';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Badge } from './ui/badge';
 import { ArrowLeft, ArrowRight, Search, X, Plus, Minus } from 'lucide-react';
-import { mockTestsAPI, mockTestsData } from '../utils/mockTestsAPI';
 import { useBills } from '../hooks/useBills';
 import { toast } from 'sonner';
-import { Page } from '../types';
+import { Page } from '../types/index';
+import { sampleTestTypes } from '../utils/sampleData';
 
 export interface BillingProcessProps {
   onNavigate: (page: Page) => void;
@@ -71,22 +71,13 @@ export function BillingProcess({ onNavigate }: BillingProcessProps) {
 
   // Load tests from API
   useEffect(() => {
-    const loadTests = async () => {
-      try {
-        const tests = await mockTestsAPI.getAllTests();
-        const formattedTests = tests.map(test => ({
-          id: test.id,
-          testName: test.testName,
-          tag: test.tag,
-          price: test.price
-        }));
-        setAvailableTests(formattedTests);
-      } catch (error) {
-        console.error('Error loading tests:', error);
-        toast.error('Failed to load tests');
-      }
-    };
-    loadTests();
+    const formattedTests = sampleTestTypes.map((test, index) => ({
+      id: `test-${index}`,
+      testName: test.test_name,
+      tag: test.tag,
+      price: test.price
+    }));
+    setAvailableTests(formattedTests);
   }, []);
 
   // Mock data
@@ -209,28 +200,21 @@ export function BillingProcess({ onNavigate }: BillingProcessProps) {
     setIsCreatingBill(true);
     try {
       const billData = {
-        id: `BILL-${Date.now()}`,
-        patientName: `${patient.title || ''} ${patient.firstName} ${patient.lastName}`.trim(),
-        patientPhone: patient.mobile || '',
-        patientEmail: patient.email || '',
-        patientAddress: patient.address || '',
-        doctorName: `${doctor.firstName || ''} ${doctor.lastName || ''}`.trim(),
-        tests: selectedTests.map(test => ({
-          id: test.id,
-          name: test.testName,
-          price: test.price,
-          category: test.tag
-        })),
-        billTotal,
-        discount: discountAmount,
-        finalAmount,
-        paymentMethod: paymentMode,
-        amountReceived,
-        amountDue,
-        status: amountDue <= 0 ? 'Paid' : 'Partial',
-        reportStatus: 'Initial', // Add default report status
-        createdAt: new Date().toISOString(),
-        notes: ''
+        patient: { 
+          first_name: patient.firstName,
+          last_name: patient.lastName,
+          email: patient.email,
+          phone: patient.mobile,
+          address: patient.address
+        },
+        doctor: {
+          first_name: doctor.firstName,
+          last_name: doctor.lastName,
+        },
+        tests: selectedTests.map(test => ({ test_id: test.id, quantity: 1})),
+        subtotal: testsTotal,
+        total_amount: finalAmount,
+        payment_status: amountDue <= 0 ? 'paid' : 'partial'
       };
 
       await addBill(billData as any);

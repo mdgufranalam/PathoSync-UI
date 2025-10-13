@@ -13,7 +13,7 @@ export const useReports = () => {
         setLoading(true);
         const response = await apiClient.get('/reports');
         if (response.success) {
-          setReports(response.data);
+          setReports(response.data as LabReport[]);
         } else {
           setError(response.error || 'Failed to fetch reports');
         }

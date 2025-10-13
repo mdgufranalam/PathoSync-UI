@@ -1,4 +1,6 @@
-export type Page = 'dashboard' | 'patients' | 'tests' | 'reports' | 'billing' | 'users' | 'settings' | 'getting-started' | 'subscription';
+export type Page = 'dashboard' | 'patients' | 'tests' | 'reports' | 'billing' | 'users' | 'settings' | 'getting-started' | 'subscription' | 'login' | 'signup' | 'password-reset' | 'enhanced-billing' | 'bills' | 'packages' | 'profile' | 'statistics' | 'notifications' | 'collection-centers' | 'upgrade-plan' | 'saas-portal';
+
+export type Role = 'admin' | 'manager' | 'technician' | 'collection-agent' | 'data-entry' | 'viewer';
 
 export interface SubscriptionPlan {
     id: string; // UUID
@@ -58,7 +60,7 @@ export interface Tenant {
     settings?: any; // JSONB
     whatsapp_config?: any; // JSONB
     email_config?: any; // JSONB
-    sms_config?: any; // JSONB
+    sms__config?: any; // JSONB
     payment_gateway_config?: any; // JSONB
     logo_url?: string;
     letterhead_url?: string;
@@ -91,7 +93,7 @@ export interface User {
     alternative_phone?: string;
     date_of_birth?: string; // DATE
     gender?: string;
-    role: string;
+    role: Role;
     department?: string;
     designation?: string;
     qualification?: string;
@@ -121,6 +123,13 @@ export interface User {
     created_at?: string; // TIMESTAMP
     updated_at?: string; // TIMESTAMP
     role_id?: number;
+    name: string;
+    features: string[];
+    subscription_plan: 'starter' | 'basic' | 'professional' | 'enterprise';
+    subscription_plan_name: string;
+    organization_name: string;
+    profile_picture?: string;
+    join_date?: string;
 }
 
 export interface UserSession {
@@ -210,6 +219,8 @@ export interface Test {
     created_at?: string; // TIMESTAMP
     updated_at?: string; // TIMESTAMP
     created_by?: string; // UUID
+    description: string;
+    category: string;
 }
 
 export interface TestParameter {
@@ -236,6 +247,7 @@ export interface Patient {
     patient_id: string;
     uhid?: string;
     aadhaar_number?: string;
+    name: string;
     first_name: string;
     middle_name?: string;
     last_name?: string;
@@ -243,7 +255,7 @@ export interface Patient {
     age_years?: number;
     age_months?: number;
     age_days?: number;
-    gender?: string;
+    gender?: 'male' | 'female' | 'other';
     phone?: string;
     alternative_phone?: string;
     email?: string;
@@ -287,6 +299,7 @@ export interface Doctor {
     registration_number?: string;
     license_number?: string;
     title?: string;
+    name: string;
     first_name: string;
     middle_name?: string;
     last_name?: string;
@@ -358,6 +371,9 @@ export interface PackageTest {
     added_at?: string; // TIMESTAMP
 }
 
+export type BillStatus = 'pending' | 'paid' | 'partially-paid' | 'cancelled';
+export type ReportStatus = 'pending' | 'in-progress' | 'completed' | 'delivered' | 'approved';
+
 export interface Bill {
     id: string; // UUID
     tenant_id: string; // UUID
@@ -385,7 +401,7 @@ export interface Bill {
     paid_amount?: number;
     balance_amount?: number;
     advance_amount?: number;
-    payment_status?: string;
+    payment_status: BillStatus;
     bill_status?: string;
     payment_method?: string;
     payment_reference?: string;
@@ -407,6 +423,13 @@ export interface Bill {
     collection_address?: string;
     collection_charges?: number;
     referring_doctor_id?: string; // UUID
+    patient: Patient;
+    doctor: Doctor;
+    tests: Test[];
+    reportStatus: ReportStatus;
+    paymentMethod: string;
+    total: number;
+    finalAmount: number;
 }
 
 export interface BillItem {
@@ -605,7 +628,23 @@ export interface CollectionCenterInventory {
 }
 
 export interface LabReport {
-    id: string; // UUID
+    id: string;
+    reportNo: string;
+    patientName: string;
+    patientAge: number;
+    patientGender: string;
+    doctorName: string;
+    sampleType: string;
+    collectionDate: string;
+    reportDate: string;
+    tests: TestResult[];
+    overallStatus: string;
+    notes?: string;
+    labInfo: {
+        name: string;
+        address: string;
+        logoUrl?: string;
+    };
     tenant_id: string; // UUID
     report_number: string;
     bill_id: string; // UUID
@@ -640,12 +679,6 @@ export interface Referral {
     updated_at?: string; // TIMESTAMPTZ
 }
 
-export interface Role {
-    id: number;
-    name: string;
-    description?: string;
-}
-
 export interface Module {
     id: number;
     name: string;
@@ -673,4 +706,13 @@ export interface UserPermission {
     user_id: string; // UUID
     permission_id: number;
     has_permission: boolean;
+}
+
+export interface TestResult {
+    testId: string;
+    name: string;
+    value: string | number;
+    unit: string;
+    referenceRange: string;
+    isAbnormal: boolean;
 }

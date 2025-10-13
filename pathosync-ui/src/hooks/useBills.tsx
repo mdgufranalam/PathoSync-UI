@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Bill } from '../types';
+import { Bill } from '../types/index';
 import { getBills, addBill as apiAddBill, updateBill as apiUpdateBill, deleteBill as apiDeleteBill } from '../utils/api';
 import { toast } from 'sonner';
 
@@ -25,7 +25,7 @@ export function BillsProvider({ children }: { children: ReactNode }) {
             try {
                 setLoading(true);
                 const fetchedBills = await getBills();
-                setBills(fetchedBills);
+                setBills(fetchedBills as Bill[]);
                 setError(null);
             } catch (err) {
                 console.error('Error fetching bills:', err);
@@ -42,7 +42,7 @@ export function BillsProvider({ children }: { children: ReactNode }) {
     const addBill = async (bill: Omit<Bill, 'id'>) => {
         try {
             const newBill = await apiAddBill(bill);
-            setBills(prev => [...prev, newBill]);
+            setBills(prev => [...prev, newBill as Bill]);
             toast.success('Bill added successfully!');
         } catch (err) {
             console.error('Error adding bill:', err);
@@ -61,7 +61,7 @@ export function BillsProvider({ children }: { children: ReactNode }) {
 
         try {
             const updatedBill = await apiUpdateBill(updatedBillData);
-            setBills(prev => prev.map(bill => (bill.id === id ? updatedBill : bill)));
+            setBills(prev => prev.map(bill => (bill.id === id ? updatedBill as Bill : bill)));
             toast.success('Bill updated successfully!');
         } catch (err) {
             console.error('Error updating bill:', err);

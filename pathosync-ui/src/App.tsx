@@ -26,12 +26,13 @@ import { UpgradePlan } from './components/UpgradePlan';
 import { ThemeToggle } from './components/ThemeToggle';
 import SaaSPortal from './components/SaaSPortal';
 import { SupabaseAuthService } from './services/auth';
-import type { User, Page, Role } from './types';
+import type { User, Page, Role } from './types/index';
 import { Button } from './components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './components/ui/dropdown-menu';
 import { Menu, User as UserIcon } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
-import { usePermissions, Permissions } from './hooks/usePermissions';
+import { usePermissions } from './hooks/usePermissions';
+import { Permissions } from './types/permissions';
 
 function AppContent() {
     const [currentPage, setCurrentPage] = useState<Page>('login');
@@ -102,7 +103,7 @@ function AppContent() {
 
         switch (currentPage) {
             case 'dashboard':
-                return <Dashboard onNavigate={onNavigate} user={currentUser as User} />;
+                return <Dashboard onNavigate={onNavigate} user={currentUser} />;
             case 'billing':
                 return <BillingProcess onNavigate={onNavigate} />;
             case 'enhanced-billing':
@@ -122,7 +123,7 @@ function AppContent() {
             case 'users':
                 return <UserManagement />;
             case 'profile':
-                return <UserProfile user={currentUser as User} onLogout={handleLogout} onUpdateProfile={() => {}} onNavigate={onNavigate} />;
+                return <UserProfile user={currentUser} onLogout={handleLogout} onUpdateProfile={() => {}} onNavigate={onNavigate} />;
             case 'statistics':
                 return <Statistics />;
             case 'subscription':
@@ -132,11 +133,11 @@ function AppContent() {
             case 'collection-centers':
                 return <CollectionCentersManagement />;
             case 'upgrade-plan':
-                return <UpgradePlan currentPlan={currentUser.subscriptionPlan} onNavigate={onNavigate} />;
+                return <UpgradePlan currentPlan={currentUser.subscription_plan} onNavigate={onNavigate} />;
             case 'saas-portal':
                 return <SaaSPortal />;
             default:
-                return <Dashboard onNavigate={onNavigate} user={currentUser as User} />;
+                return <Dashboard onNavigate={onNavigate} user={currentUser} />;
         }
     };
     
