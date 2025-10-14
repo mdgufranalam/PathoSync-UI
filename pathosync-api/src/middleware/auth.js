@@ -15,7 +15,7 @@ const authenticate = async (req, res, next) => {
     }
     req.user = {
       id: rows[0].id,
-      role_id: rows[0].role_id,
+      role_id:rows[0].role_id,
       tenant_id: tenantId
     };
     next();
