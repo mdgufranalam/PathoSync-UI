@@ -8,7 +8,11 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT,
 });
-
-module.exports = {
+// CHANGE: Added error handling for database connection
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
+});
+module.exports = {  
   query: (text, params) => pool.query(text, params),
 };

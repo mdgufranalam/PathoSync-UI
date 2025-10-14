@@ -46,7 +46,7 @@ router.post('/login', async (req, res) => {
     const user = userRes.rows[0];
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ msg: 'Invalid credentials' });
+      return res.status(400).json({ msg: 'Invalid Password' });
     }
 
     // Return jsonwebtoken
