@@ -33,6 +33,7 @@ const statisticsRouter = require('./routes/statistics'); // Import statistics ro
 const exportRouter = require('./routes/export'); // Import export router
 const rolesRouter = require('./routes/roles');
 const permissionsRouter = require('./routes/permissions');
+const healthRouter = require('./routes/health');
 
 // Middleware
 app.use(cors());
@@ -71,6 +72,7 @@ app.use('/api/statistics', statisticsRouter); // Mount statistics router
 app.use('/api/export', exportRouter); // Mount export router
 app.use('/api/roles', rolesRouter);
 app.use('/api/permissions', permissionsRouter);
+app.use('/api/health', healthRouter);
 
 app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
