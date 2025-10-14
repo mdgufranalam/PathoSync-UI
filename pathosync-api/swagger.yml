@@ -1,0 +1,2908 @@
+openapi: 3.0.3
+info:
+  title: Healthcare SaaS - Laboratory Test Management System API
+  description: |
+    API for a multi-tenant Laboratory Test Management System (India-focused).
+    Use X-Tenant-ID header for tenant-specific operations and Bearer JWT for auth.
+  version: "1.0.0"
+servers:
+  - url: https://your-api-domain.com/api/v1
+    description: Production server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    TenantHeader:
+      name: X-Tenant-ID
+      in: header
+      description: Tenant UUID for multi-tenant requests (required for tenant-scoped endpoints)
+      required: false
+      schema:
+        type: string
+        format: uuid
+    PaginationPage:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Page number
+    PaginationLimit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 20
+      description: Page size
+  schemas:
+
+    ErrorDetails:
+      type: object
+      additionalProperties: true
+      description: Additional error details
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: AUTH_001
+            message:
+              type: string
+              example: Invalid credentials
+            details:
+              $ref: '#/components/schemas/ErrorDetails'
+            timestamp:
+              type: string
+              format: date-time
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        role:
+          type: string
+          description: Admin|Manager|Technician|Collection Agent|Data Entry|Viewer
+        department:
+          type: string
+        joinDate:
+          type: string
+          format: date
+        subscriptionPlan:
+          type: string
+          description: basic|starter|professional|enterprise
+        organizationName:
+          type: string
+        tenantId:
+          type: string
+          format: uuid
+        permissions:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+        lastLogin:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+        - captcha
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        captcha:
+          type: string
+        rememberMe:
+          type: boolean
+          default: false
+
+    LoginResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        tokens:
+          type: object
+          properties:
+            accessToken:
+              type: string
+            refreshToken:
+              type: string
+            sessionId:
+              type: string
+              format: uuid
+            expiresIn:
+              type: integer
+              description: seconds
+
+    TokenRefreshRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+
+    TokenRefreshResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        expiresIn:
+          type: integer
+
+    LogoutRequest:
+      type: object
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+
+    Tenant:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        organizationName:
+          type: string
+        domain:
+          type: string
+        subscriptionPlan:
+          type: string
+        subscriptionStatus:
+          type: string
+          enum: [active, trial, suspended, cancelled]
+        subscriptionStartDate:
+          type: string
+          format: date
+        subscriptionEndDate:
+          type: string
+          format: date
+        billingInfo:
+          type: object
+          properties:
+            billingEmail:
+              type: string
+              format: email
+            address:
+              type: string
+            gstNumber:
+              type: string
+        settings:
+          type: object
+          properties:
+            whatsappEnabled:
+              type: boolean
+            smsEnabled:
+              type: boolean
+            emailEnabled:
+              type: boolean
+            maxUsers:
+              type: integer
+            maxPatients:
+              type: integer
+        usage:
+          type: object
+          properties:
+            currentUsers:
+              type: integer
+            currentPatients:
+              type: integer
+            monthlyBills:
+              type: integer
+            monthlyReports:
+              type: integer
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    TenantsListResponse:
+      type: object
+      properties:
+        tenants:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tenant'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    PermissionRole:
+      type: object
+      properties:
+        name:
+          type: string
+        permissions:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+    RolesResponse:
+      type: object
+      properties:
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissionRole'
+
+    PermissionCheckResponse:
+      type: object
+      properties:
+        hasPermission:
+          type: boolean
+        permissions:
+          type: array
+          items:
+            type: string
+
+    Module:
+      type: object
+      properties:
+        name:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+
+    UserListResponse:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    CreateUserRequest:
+      type: object
+      required:
+        - name
+        - email
+        - role
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        role:
+          type: string
+        department:
+          type: string
+        password:
+          type: string
+        sendWelcomeEmail:
+          type: boolean
+
+    ActivityRecord:
+      type: object
+      properties:
+        action:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        ipAddress:
+          type: string
+        userAgent:
+          type: string
+        resourceId:
+          type: string
+
+    UserActivityResponse:
+      type: object
+      properties:
+        activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActivityRecord'
+
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        pincode:
+          type: string
+        country:
+          type: string
+
+    EmergencyContact:
+      type: object
+      properties:
+        name:
+          type: string
+        relationship:
+          type: string
+        phone:
+          type: string
+
+    MedicalHistoryItem:
+      type: object
+      properties:
+        condition:
+          type: string
+        diagnosedDate:
+          type: string
+          format: date
+        status:
+          type: string
+
+    Insurance:
+      type: object
+      properties:
+        provider:
+          type: string
+        policyNumber:
+          type: string
+        validUntil:
+          type: string
+          format: date
+
+    Patient:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        patientId:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        alternatePhone:
+          type: string
+        address:
+          $ref: '#/components/schemas/Address'
+        dateOfBirth:
+          type: string
+          format: date
+        age:
+          type: integer
+        gender:
+          type: string
+        bloodGroup:
+          type: string
+        emergencyContact:
+          $ref: '#/components/schemas/EmergencyContact'
+        medicalHistory:
+          type: array
+          items:
+            $ref: '#/components/schemas/MedicalHistoryItem'
+        insurance:
+          $ref: '#/components/schemas/Insurance'
+        lastVisit:
+          type: string
+          format: date-time
+        totalBills:
+          type: integer
+        totalAmount:
+          type: number
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PatientListResponse:
+      type: object
+      properties:
+        patients:
+          type: array
+          items:
+            $ref: '#/components/schemas/Patient'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    CreatePatientRequest:
+      type: object
+      required:
+        - name
+        - phone
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        address:
+          $ref: '#/components/schemas/Address'
+        dateOfBirth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [male, female, other]
+        bloodGroup:
+          type: string
+        emergencyContact:
+          $ref: '#/components/schemas/EmergencyContact'
+
+    ParameterDefinition:
+      type: object
+      properties:
+        name:
+          type: string
+        normalRange:
+          type: string
+        unit:
+          type: string
+
+    Test:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        shortName:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        bodySystem:
+          type: string
+        testType:
+          type: string
+        price:
+          type: number
+        discountedPrice:
+          type: number
+        normalRange:
+          type: object
+          additionalProperties:
+            type: string
+        unit:
+          type: string
+        specimen:
+          type: string
+        specimenVolume:
+          type: string
+        fastingRequired:
+          type: boolean
+        reportingTime:
+          type: string
+        methodology:
+          type: string
+        parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParameterDefinition'
+        clinicalSignificance:
+          type: string
+        isActive:
+          type: boolean
+        popularityScore:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TestListResponse:
+      type: object
+      properties:
+        tests:
+          type: array
+          items:
+            $ref: '#/components/schemas/Test'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    PackageItem:
+      type: object
+      properties:
+        testId:
+          type: string
+          format: uuid
+        test:
+          type: object
+          properties:
+            name:
+              type: string
+            price:
+              type: number
+
+    Package:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        tests:
+          type: array
+          items:
+            $ref: '#/components/schemas/PackageItem'
+        originalPrice:
+          type: number
+        packagePrice:
+          type: number
+        discount:
+          type: number
+        savings:
+          type: number
+        isPopular:
+          type: boolean
+        ageGroup:
+          type: string
+        gender:
+          type: string
+        fastingRequired:
+          type: boolean
+        reportingTime:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    PackageListResponse:
+      type: object
+      properties:
+        packages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Package'
+
+    BillItem:
+      type: object
+      properties:
+        type:
+          type: string
+          description: test|package
+        itemId:
+          type: string
+          format: uuid
+        item:
+          type: object
+          properties:
+            name:
+              type: string
+            price:
+              type: number
+        quantity:
+          type: integer
+        price:
+          type: number
+        discount:
+          type: number
+
+    Tax:
+      type: object
+      properties:
+        cgst:
+          type: number
+        sgst:
+          type: number
+        total:
+          type: number
+
+    SampleCollection:
+      type: object
+      properties:
+        type:
+          type: string
+          description: lab|home
+        scheduledDate:
+          type: string
+          format: date-time
+        collectedDate:
+          type: string
+          format: date-time
+        collectorId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          description: scheduled|collected|pending
+
+    Bill:
+      type: object
+      properties:
+        id:
+          type: string
+        billNumber:
+          type: string
+        patientId:
+          type: string
+        patient:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            phone:
+              type: string
+            email:
+              type: string
+        doctorId:
+          type: string
+        doctor:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            specialization:
+              type: string
+        collectionCenter:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type: string
+            address:
+              type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BillItem'
+        subtotal:
+          type: number
+        discount:
+          type: object
+          properties:
+            amount:
+              type: number
+            percentage:
+              type: number
+            reason:
+              type: string
+        tax:
+          $ref: '#/components/schemas/Tax'
+        total:
+          type: number
+        status:
+          type: string
+        paymentMethod:
+          type: string
+        paymentDetails:
+          type: object
+          properties:
+            transactionId:
+              type: string
+            paidAmount:
+              type: number
+            paymentDate:
+              type: string
+              format: date-time
+        sampleCollection:
+          $ref: '#/components/schemas/SampleCollection'
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+
+    BillsListResponse:
+      type: object
+      properties:
+        bills:
+          type: array
+          items:
+            $ref: '#/components/schemas/Bill'
+        summary:
+          type: object
+          properties:
+            totalBills:
+              type: integer
+            totalAmount:
+              type: number
+            paidAmount:
+              type: number
+            pendingAmount:
+              type: number
+
+    PaymentRequest:
+      type: object
+      required:
+        - paymentMethod
+        - amount
+      properties:
+        paymentMethod:
+          type: string
+        amount:
+          type: number
+        transactionId:
+          type: string
+        notes:
+          type: string
+
+    ReportTestResult:
+      type: object
+      properties:
+        testId:
+          type: string
+        test:
+          type: object
+          properties:
+            name:
+              type: string
+            normalRange:
+              type: string
+        result:
+          type: string
+        unit:
+          type: string
+        status:
+          type: string
+        remarks:
+          type: string
+
+    DescriptiveResult:
+      type: object
+      properties:
+        testId:
+          type: string
+        test:
+          type: object
+          properties:
+            name:
+              type: string
+        clinicalHistory:
+          type: string
+        grossExamination:
+          type: string
+        microscopicExamination:
+          type: string
+        diagnosis:
+          type: string
+        recommendations:
+          type: string
+
+    GroupResult:
+      type: object
+      properties:
+        groupId:
+          type: string
+        group:
+          type: object
+          properties:
+            name:
+              type: string
+        tests:
+          type: array
+          items:
+            type: object
+            properties:
+              testId:
+                type: string
+              result:
+                type: string
+              status:
+                type: string
+
+    Report:
+      type: object
+      properties:
+        id:
+          type: string
+        reportNumber:
+          type: string
+        patientId:
+          type: string
+        patient:
+          type: object
+          properties:
+            name:
+              type: string
+            age:
+              type: integer
+            gender:
+              type: string
+        billId:
+          type: string
+        testResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportTestResult'
+        descriptiveResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/DescriptiveResult'
+        groupResults:
+          type: array
+          items:
+            $ref: '#/components/schemas/GroupResult'
+        clinicalRemarks:
+          type: string
+        technician:
+          type: object
+          properties:
+            name:
+              type: string
+            signature:
+              type: string
+        pathologist:
+          type: object
+          properties:
+            name:
+              type: string
+            qualification:
+              type: string
+            signature:
+              type: string
+        status:
+          type: string
+        reportDate:
+          type: string
+          format: date-time
+        verifiedDate:
+          type: string
+          format: date-time
+        deliveredDate:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    ReportListResponse:
+      type: object
+      properties:
+        reports:
+          type: array
+          items:
+            $ref: '#/components/schemas/Report'
+
+    Doctor:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        specialization:
+          type: string
+        qualification:
+          type: string
+        experience:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        licenseNumber:
+          type: string
+        hospitalAffiliation:
+          type: string
+        consultationFee:
+          type: number
+        address:
+          type: object
+        availability:
+          type: array
+          items:
+            type: object
+            properties:
+              day:
+                type: string
+              slots:
+                type: array
+                items:
+                  type: string
+        totalPatients:
+          type: integer
+        totalConsultations:
+          type: integer
+        rating:
+          type: number
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+
+    DoctorListResponse:
+      type: object
+      properties:
+        doctors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Doctor'
+
+    CollectionCenter:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        code:
+          type: string
+        type:
+          type: string
+          enum: [main, satellite, home_collection]
+        address:
+          type: object
+        contact:
+          type: object
+          properties:
+            phone:
+              type: string
+            email:
+              type: string
+            manager:
+              type: string
+        operatingHours:
+          type: object
+        services:
+          type: array
+          items:
+            type: string
+        staff:
+          type: array
+          items:
+            type: object
+            properties:
+              userId:
+                type: string
+              user:
+                type: object
+        coverage:
+          type: object
+          properties:
+            areas:
+              type: array
+              items:
+                type: string
+            radius:
+              type: string
+        equipment:
+          type: array
+          items:
+            type: string
+        statistics:
+          type: object
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+
+    CollectionCenterListResponse:
+      type: object
+      properties:
+        centers:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionCenter'
+
+    DashboardStatistics:
+      type: object
+      properties:
+        overview:
+          type: object
+        revenueAnalytics:
+          type: object
+        testAnalytics:
+          type: object
+        patientAnalytics:
+          type: object
+        operationalMetrics:
+          type: object
+        collectionCenters:
+          type: array
+          items:
+            type: object
+
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: string
+        plan:
+          type: string
+        status:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        billingCycle:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        features:
+          type: array
+          items:
+            type: string
+        usage:
+          type: object
+        nextBillingDate:
+          type: string
+        autoRenewal:
+          type: boolean
+
+    WhatsAppMessageRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+        type:
+          type: string
+          enum: [text, image, document]
+        message:
+          type: string
+        attachment:
+          type: string
+
+    SMSRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+        message:
+          type: string
+        type:
+          type: string
+          enum: [notification, otp, marketing]
+
+    EmailRequest:
+      type: object
+      properties:
+        to:
+          type: string
+          format: email
+        subject:
+          type: string
+        body:
+          type: string
+        attachments:
+          type: array
+          items:
+            type: string
+
+    File:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        originalName:
+          type: string
+        url:
+          type: string
+        size:
+          type: integer
+        mimeType:
+          type: string
+        category:
+          type: string
+        uploadedBy:
+          type: string
+        createdAt:
+          type: string
+
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        user:
+          type: object
+        action:
+          type: string
+        resource:
+          type: string
+        resourceId:
+          type: string
+        details:
+          type: object
+        ipAddress:
+          type: string
+        userAgent:
+          type: string
+        timestamp:
+          type: string
+
+  responses:
+    Unauthorized:
+      description: Authentication required / invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    BadRequest:
+      description: Bad request / validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServerError:
+      description: Server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+security:
+  - bearerAuth: []
+
+paths:
+
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login user with captcha and remember me
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh-token:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+      responses:
+        "200":
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefreshResponse'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout user and invalidate session
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Logged out successfully
+
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current user profile with permissions
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/forgot-password:
+    post:
+      tags: [Authentication]
+      summary: Initiate password reset
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+      responses:
+        "200":
+          description: Reset link sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Password reset link sent to email
+
+  /auth/reset-password:
+    post:
+      tags: [Authentication]
+      summary: Reset password with token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        "200":
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Password reset successful
+
+  /tenants:
+    get:
+      tags: [Multi-Tenancy]
+      summary: Get all tenants (Super Admin only)
+      parameters:
+        - $ref: '#/components/parameters/PaginationPage'
+        - $ref: '#/components/parameters/PaginationLimit'
+      responses:
+        "200":
+          description: Tenants list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantsListResponse'
+        "403":
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      tags: [Multi-Tenancy]
+      summary: Create new tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - organizationName
+                - domain
+                - adminUser
+              properties:
+                organizationName:
+                  type: string
+                domain:
+                  type: string
+                subscriptionPlan:
+                  type: string
+                adminUser:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    email:
+                      type: string
+                    phone:
+                      type: string
+                billingInfo:
+                  type: object
+                  properties:
+                    billingEmail:
+                      type: string
+                      format: email
+                    address:
+                      type: string
+                    gstNumber:
+                      type: string
+      responses:
+        "201":
+          description: Tenant created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+
+  /tenants/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    put:
+      tags: [Multi-Tenancy]
+      summary: Update tenant information
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Tenant'
+      responses:
+        "200":
+          description: Updated tenant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tenant'
+
+    delete:
+      tags: [Multi-Tenancy]
+      summary: Suspend tenant (soft delete)
+      responses:
+        "204":
+          description: Tenant suspended
+
+  /tenants/{id}/usage:
+    get:
+      tags: [Multi-Tenancy]
+      summary: Get tenant usage metrics
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Usage metrics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usage:
+                    type: object
+
+  /permissions/roles:
+    get:
+      tags: [Permissions]
+      summary: Get all available roles with their permissions
+      responses:
+        "200":
+          description: Roles list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolesResponse'
+
+  /permissions/check:
+    get:
+      tags: [Permissions]
+      summary: Check specific permission for current user
+      parameters:
+        - name: module
+          in: query
+          schema:
+            type: string
+        - name: action
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Permission check
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionCheckResponse'
+
+  /permissions/modules:
+    get:
+      tags: [Permissions]
+      summary: Get accessible modules for current user
+      responses:
+        "200":
+          description: Modules
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  modules:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Module'
+
+  /users:
+    get:
+      tags: [Users]
+      summary: Get all users with filters
+      parameters:
+        - $ref: '#/components/parameters/PaginationPage'
+        - $ref: '#/components/parameters/PaginationLimit'
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+        - name: department
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Users list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+
+    post:
+      tags: [Users]
+      summary: Create new user with role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+
+  /users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    put:
+      tags: [Users]
+      summary: Update user information and role
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+    delete:
+      tags: [Users]
+      summary: Deactivate user (soft delete)
+      responses:
+        "204":
+          description: User deactivated
+
+  /users/{id}/password:
+    patch:
+      tags: [Users]
+      summary: Reset user password (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newPassword:
+                  type: string
+      responses:
+        "200":
+          description: Password reset
+
+  /users/{id}/activity:
+    get:
+      tags: [Users]
+      summary: Get user activity log
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Activity log
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserActivityResponse'
+
+  /patients:
+    get:
+      tags: [Patients]
+      summary: Get all patients with advanced filtering
+      parameters:
+        - $ref: '#/components/parameters/PaginationPage'
+        - $ref: '#/components/parameters/PaginationLimit'
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: gender
+          in: query
+          schema:
+            type: string
+            enum: [male, female, other]
+        - name: ageRange
+          in: query
+          schema:
+            type: string
+        - name: registrationDate
+          in: query
+          schema:
+            type: string
+        - name: lastVisit
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Patients list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PatientListResponse'
+
+    post:
+      tags: [Patients]
+      summary: Create new patient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePatientRequest'
+      responses:
+        "201":
+          description: Patient created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+
+  /patients/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      tags: [Patients]
+      summary: Get patient details with history
+      responses:
+        "200":
+          description: Patient details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Patient'
+    put:
+      tags: [Patients]
+      summary: Update patient information
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Patient'
+      responses:
+        "200":
+          description: Updated patient
+    delete:
+      tags: [Patients]
+      summary: Deactivate patient
+      responses:
+        "204":
+          description: Patient deactivated
+
+  /patients/{id}/bills:
+    get:
+      tags: [Patients]
+      summary: Get patient's bill history
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Bill history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillsListResponse'
+
+  /patients/{id}/reports:
+    get:
+      tags: [Patients]
+      summary: Get patient's test reports
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Reports list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportListResponse'
+
+  /tests:
+    get:
+      tags: [Tests]
+      summary: Get all tests with filters
+      parameters:
+        - $ref: '#/components/parameters/PaginationPage'
+        - $ref: '#/components/parameters/PaginationLimit'
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: bodySystem
+          in: query
+          schema:
+            type: string
+        - name: testType
+          in: query
+          schema:
+            type: string
+        - name: priceRange
+          in: query
+          schema:
+            type: string
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Tests list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestListResponse'
+
+    post:
+      tags: [Tests]
+      summary: Create new test
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Test'
+      responses:
+        "201":
+          description: Test created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Test'
+
+  /tests/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+    put:
+      tags: [Tests]
+      summary: Update test
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Test'
+      responses:
+        "200":
+          description: Updated test
+    delete:
+      tags: [Tests]
+      summary: Deactivate test
+      responses:
+        "204":
+          description: Test deactivated
+
+  /tests/categories:
+    get:
+      tags: [Tests]
+      summary: Get all test categories with body systems
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  categories:
+                    type: array
+                    items:
+                      type: object
+
+  /tests/body-systems:
+    get:
+      tags: [Tests]
+      summary: Get all body systems with test counts
+      responses:
+        "200":
+          description: Body systems
+
+  /tests/popular:
+    get:
+      tags: [Tests]
+      summary: Get most popular tests
+      responses:
+        "200":
+          description: Popular tests
+
+  /packages:
+    get:
+      tags: [Packages]
+      summary: Get all test packages
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PackageListResponse'
+
+    post:
+      tags: [Packages]
+      summary: Create new test package
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Package'
+      responses:
+        "201":
+          description: Package created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Package'
+
+  /packages/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+    put:
+      tags: [Packages]
+      summary: Update test package
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Package'
+      responses:
+        "200":
+          description: Updated package
+    delete:
+      tags: [Packages]
+      summary: Deactivate package
+      responses:
+        "204":
+          description: Package deactivated
+
+  /bills:
+    get:
+      tags: [Billing]
+      summary: Get all bills with advanced filtering
+      parameters:
+        - $ref: '#/components/parameters/PaginationPage'
+        - $ref: '#/components/parameters/PaginationLimit'
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: paymentMethod
+          in: query
+          schema:
+            type: string
+        - name: patientId
+          in: query
+          schema:
+            type: string
+        - name: doctorId
+          in: query
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+        - name: endDate
+          in: query
+          schema:
+            type: string
+        - name: amountRange
+          in: query
+          schema:
+            type: string
+        - name: billType
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Bills list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillsListResponse'
+
+    post:
+      tags: [Billing]
+      summary: Create new bill (Enhanced Billing Process)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                patientId:
+                  type: string
+                doctorId:
+                  type: string
+                collectionCenterId:
+                  type: string
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                      itemId:
+                        type: string
+                      quantity:
+                        type: integer
+                      customPrice:
+                        type: number
+                discount:
+                  type: object
+                paymentMethod:
+                  type: string
+                sampleCollection:
+                  type: object
+                notes:
+                  type: string
+      responses:
+        "201":
+          description: Bill created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bill'
+
+  /bills/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+    get:
+      tags: [Billing]
+      summary: Get detailed bill information
+      responses:
+        "200":
+          description: Bill detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Bill'
+    put:
+      tags: [Billing]
+      summary: Update bill
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Bill'
+      responses:
+        "200":
+          description: Updated bill
+    delete:
+      tags: [Billing]
+      summary: Cancel bill
+      responses:
+        "204":
+          description: Bill cancelled
+
+  /bills/{id}/payment:
+    patch:
+      tags: [Billing]
+      summary: Process payment for a bill
+      parameters:
+        - name: id
+          in: path
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentRequest'
+      responses:
+        "200":
+          description: Payment processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /bills/{id}/pdf:
+    get:
+      tags: [Billing]
+      summary: Generate and download bill PDF
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        "200":
+          description: PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /bills/{id}/send-whatsapp:
+    post:
+      tags: [Billing, Integrations]
+      summary: Send bill via WhatsApp
+      parameters:
+        - name: id
+          in: path
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+                message:
+                  type: string
+      responses:
+        "200":
+          description: Sent via WhatsApp
+
+  /bills/{id}/send-email:
+    post:
+      tags: [Billing, Integrations]
+      summary: Send bill via email
+      parameters:
+        - name: id
+          in: path
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Email sent
+
+  /bills/{id}/send-sms:
+    post:
+      tags: [Billing, Integrations]
+      summary: Send bill via SMS
+      parameters:
+        - name: id
+          in: path
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: SMS sent
+
+  /reports:
+    get:
+      tags: [Reports]
+      summary: Get all patient reports
+      parameters:
+        - $ref: '#/components/parameters/PaginationPage'
+        - $ref: '#/components/parameters/PaginationLimit'
+        - name: patientId
+          in: query
+          schema:
+            type: string
+        - name: billId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: testType
+          in: query
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          schema:
+            type: string
+        - name: endDate
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Reports list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportListResponse'
+
+    post:
+      tags: [Reports]
+      summary: Create new report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Report'
+      responses:
+        "201":
+          description: Report created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+
+  /reports/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+    get:
+      tags: [Reports]
+      summary: Get detailed report
+      responses:
+        "200":
+          description: Report detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+    put:
+      tags: [Reports]
+      summary: Update report
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Report'
+      responses:
+        "200":
+          description: Updated report
+
+  /reports/{id}/verify:
+    patch:
+      tags: [Reports]
+      summary: Verify report (Pathologist action)
+      parameters:
+        - name: id
+          in: path
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                verifierId:
+                  type: string
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Report verified
+
+  /reports/{id}/send:
+    post:
+      tags: [Reports, Integrations]
+      summary: Send report via WhatsApp/Email/SMS
+      parameters:
+        - name: id
+          in: path
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                channel:
+                  type: string
+                  enum: [whatsapp, email, sms]
+                to:
+                  type: string
+                message:
+                  type: string
+      responses:
+        "200":
+          description: Report sent
+
+  /reports/{id}/pdf:
+    get:
+      tags: [Reports]
+      summary: Generate and download report PDF
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        "200":
+          description: PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+  /doctors:
+    get:
+      tags: [Doctors]
+      summary: Get all doctors
+      responses:
+        "200":
+          description: Doctors list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorListResponse'
+
+    post:
+      tags: [Doctors]
+      summary: Create new doctor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Doctor'
+      responses:
+        "201":
+          description: Doctor created
+
+  /doctors/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+    put:
+      tags: [Doctors]
+      summary: Update doctor information
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Doctor'
+      responses:
+        "200":
+          description: Doctor updated
+    delete:
+      tags: [Doctors]
+      summary: Deactivate doctor
+      responses:
+        "204":
+          description: Doctor deactivated
+
+  /doctors/{id}/stats:
+    get:
+      tags: [Doctors, Statistics]
+      summary: Get doctor performance statistics
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Doctor stats
+
+  /collection-centers:
+    get:
+      tags: [Collection Centers]
+      summary: Get all collection centers (Professional/Enterprise)
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionCenterListResponse'
+
+    post:
+      tags: [Collection Centers]
+      summary: Create new collection center
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionCenter'
+      responses:
+        "201":
+          description: Collection center created
+
+  /collection-centers/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+    put:
+      tags: [Collection Centers]
+      summary: Update collection center
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionCenter'
+      responses:
+        "200":
+          description: Updated center
+    delete:
+      tags: [Collection Centers]
+      summary: Deactivate collection center
+      responses:
+        "204":
+          description: Deactivated
+
+  /collection-centers/{id}/assign-staff:
+    post:
+      tags: [Collection Centers]
+      summary: Assign staff to collection center
+      parameters:
+        - name: id
+          in: path
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userIds:
+                  type: array
+                  items:
+                    type: string
+                role:
+                  type: string
+      responses:
+        "200":
+          description: Staff assigned
+
+  /collection-centers/{id}/coverage:
+    get:
+      tags: [Collection Centers]
+      summary: Get service coverage areas
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Coverage areas
+
+  /collection-centers/{id}/schedule:
+    get:
+      tags: [Collection Centers]
+      summary: Get collection schedule
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Schedule
+
+  /statistics/dashboard:
+    get:
+      tags: [Statistics]
+      summary: Get comprehensive dashboard statistics
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardStatistics'
+
+  /statistics/revenue:
+    get:
+      tags: [Statistics]
+      summary: Get detailed revenue analytics
+
+  /statistics/tests:
+    get:
+      tags: [Statistics]
+      summary: Get test utilization statistics
+
+  /statistics/patients:
+    get:
+      tags: [Statistics]
+      summary: Get patient demographics and trends
+
+  /statistics/performance:
+    get:
+      tags: [Statistics]
+      summary: Get operational performance metrics
+
+  /statistics/export:
+    get:
+      tags: [Statistics]
+      summary: Export analytics data
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [csv, excel, pdf]
+        - name: dateRange
+          in: query
+          schema:
+            type: string
+        - name: metrics
+          in: query
+          schema:
+            type: string
+
+  /subscription:
+    get:
+      tags: [Subscription]
+      summary: Get current subscription details
+      responses:
+        "200":
+          description: Subscription
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subscription:
+                    $ref: '#/components/schemas/Subscription'
+
+  /subscription/upgrade:
+    post:
+      tags: [Subscription]
+      summary: Upgrade subscription plan
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newPlan:
+                  type: string
+                billingCycle:
+                  type: string
+                paymentMethod:
+                  type: string
+      responses:
+        "200":
+          description: Upgraded
+
+  /subscription/cancel:
+    post:
+      tags: [Subscription]
+      summary: Cancel subscription
+      responses:
+        "200":
+          description: Subscription cancelled
+
+  /subscription/invoices:
+    get:
+      tags: [Subscription]
+      summary: Get billing history
+
+  /subscription/usage:
+    get:
+      tags: [Subscription]
+      summary: Get detailed usage metrics
+
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Get user notifications
+      responses:
+        "200":
+          description: Notifications list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      type: object
+                  unreadCount:
+                    type: integer
+
+    post:
+      tags: [Notifications]
+      summary: Create system notification (admin)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+
+  /notifications/{id}/read:
+    patch:
+      tags: [Notifications]
+      summary: Mark notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Marked read
+
+  /notifications/mark-all-read:
+    post:
+      tags: [Notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: All marked
+
+  /notifications/settings:
+    get:
+      tags: [Notifications]
+      summary: Get notification preferences
+      responses:
+        "200":
+          description: Settings
+    put:
+      tags: [Notifications]
+      summary: Update notification preferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Updated
+
+  /print/settings:
+    get:
+      tags: [Print]
+      summary: Get global print settings
+      responses:
+        "200":
+          description: Print settings
+    put:
+      tags: [Print]
+      summary: Update print settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Updated
+
+  /print/preview:
+    post:
+      tags: [Print]
+      summary: Generate print preview
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Preview generated
+
+  /print/custom:
+    post:
+      tags: [Print]
+      summary: Custom print with specific settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Printed
+
+  /whatsapp/send-message:
+    post:
+      tags: [Integrations]
+      summary: Send WhatsApp message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WhatsAppMessageRequest'
+      responses:
+        "200":
+          description: Message queued/sent
+
+  /whatsapp/templates:
+    get:
+      tags: [Integrations]
+      summary: Get WhatsApp message templates
+    post:
+      tags: [Integrations]
+      summary: Create new message template
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+
+  /whatsapp/status/{messageId}:
+    get:
+      tags: [Integrations]
+      summary: Get message delivery status
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Status
+
+  /whatsapp/settings:
+    get:
+      tags: [Integrations]
+      summary: Get WhatsApp configuration
+    put:
+      tags: [Integrations]
+      summary: Update WhatsApp settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+
+  /sms/send:
+    post:
+      tags: [Integrations]
+      summary: Send SMS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SMSRequest'
+      responses:
+        "200":
+          description: SMS queued/sent
+
+  /sms/templates:
+    get:
+      tags: [Integrations]
+      summary: Get SMS templates
+
+  /sms/delivery-report/{messageId}:
+    get:
+      tags: [Integrations]
+      summary: Get SMS delivery status
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+      responses:
+        "200":
+          description: Delivery report
+
+  /email/send:
+    post:
+      tags: [Integrations]
+      summary: Send email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailRequest'
+      responses:
+        "200":
+          description: Email queued/sent
+
+  /email/templates:
+    get:
+      tags: [Integrations]
+      summary: Get email templates
+    post:
+      tags: [Integrations]
+      summary: Create email template
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+
+  /files/upload:
+    post:
+      tags: [Files]
+      summary: Upload files (reports, bills, images)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                category:
+                  type: string
+      responses:
+        "201":
+          description: File uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+
+  /files/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+    get:
+      tags: [Files]
+      summary: Get file details
+      responses:
+        "200":
+          description: File details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+    delete:
+      tags: [Files]
+      summary: Delete file
+      responses:
+        "204":
+          description: Deleted
+
+  /files/{id}/download:
+    get:
+      tags: [Files]
+      summary: Download file
+      parameters:
+        - name: id
+          in: path
+          required: true
+      responses:
+        "200":
+          description: File binary
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /audit/logs:
+    get:
+      tags: [Audit]
+      summary: Get system audit logs
+      parameters:
+        - $ref: '#/components/parameters/PaginationPage'
+        - $ref: '#/components/parameters/PaginationLimit'
+      responses:
+        "200":
+          description: Audit logs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditLog'
+
+  /audit/compliance:
+    get:
+      tags: [Audit]
+      summary: Get compliance reports
+
+  /audit/data-export:
+    get:
+      tags: [Audit]
+      summary: Export data for compliance
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [csv, json, excel]
+      responses:
+        "200":
+          description: Exported data
+
+tags:
+  - name: Authentication
+    description: Login, logout, token management
+  - name: Multi-Tenancy
+    description: Tenant (Super Admin) operations
+  - name: Permissions
+    description: Role & permissions management
+  - name: Users
+    description: User CRUD and activity
+  - name: Patients
+    description: Patient records and history
+  - name: Tests
+    description: Test catalog and categorization
+  - name: Packages
+    description: Test packages
+  - name: Billing
+    description: Bills and payments
+  - name: Reports
+    description: Test reports & verification
+  - name: Doctors
+    description: Doctor registry
+  - name: Collection Centers
+    description: Collection centers & schedules
+  - name: Statistics
+    description: Analytics and exports
+  - name: Subscription
+    description: Plan and billing
+  - name: Notifications
+    description: In-app & external notifications
+  - name: Print
+    description: Print settings and preview
+  - name: Integrations
+    description: WhatsApp, SMS, Email integrations
+  - name: Files
+    description: File upload & management
+  - name: Audit
+    description: Audit logs and compliance
+
+externalDocs:
+  description: Error Codes Reference & Rate Limiting
+  url: https://your-api-domain.com/docs/errors-and-limits
