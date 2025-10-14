@@ -1,12 +1,12 @@
-import { Router, Request, Response } from 'express';
-import { Pool } from 'pg';
-import { authenticate, checkPermission } from '../middleware/auth';
+const { Router } = require('express');
+const { Pool } = require('pg');
+const { authenticate, checkPermission } = require('../middleware/auth');
 
 const router = Router();
 const pool = new Pool();
 
 // Get all patients
-router.get('/', authenticate, checkPermission('Patients', 'view'), async (req: Request, res: Response) => {
+router.get('/', authenticate, checkPermission('Patients', 'view'), async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM patients');
     res.json(rows);
@@ -17,7 +17,7 @@ router.get('/', authenticate, checkPermission('Patients', 'view'), async (req: R
 });
 
 // Get a single patient
-router.get('/:id', authenticate, checkPermission('Patients', 'view'), async (req: Request, res: Response) => {
+router.get('/:id', authenticate, checkPermission('Patients', 'view'), async (req, res) => {
   const { id } = req.params;
   try {
     const { rows } = await pool.query('SELECT * FROM patients WHERE id = $1', [id]);
@@ -32,7 +32,7 @@ router.get('/:id', authenticate, checkPermission('Patients', 'view'), async (req
 });
 
 // Create a new patient
-router.post('/', authenticate, checkPermission('Patients', 'create'), async (req: Request, res: Response) => {
+router.post('/', authenticate, checkPermission('Patients', 'create'), async (req, res) => {
   const { tenant_id, first_name, last_name, email, phone, address, date_of_birth, gender, emergency_contact_name, emergency_contact_phone } = req.body;
 
   try {
@@ -49,7 +49,7 @@ router.post('/', authenticate, checkPermission('Patients', 'create'), async (req
 });
 
 // Update a patient
-router.put('/:id', authenticate, checkPermission('Patients', 'edit'), async (req: Request, res: Response) => {
+router.put('/:id', authenticate, checkPermission('Patients', 'edit'), async (req, res) => {
   const { id } = req.params;
   const { tenant_id, first_name, last_name, email, phone, address, date_of_birth, gender, emergency_contact_name, emergency_contact_phone } = req.body;
 
@@ -69,7 +69,7 @@ router.put('/:id', authenticate, checkPermission('Patients', 'edit'), async (req
 });
 
 // Delete a patient
-router.delete('/:id', authenticate, checkPermission('Patients', 'delete'), async (req: Request, res: Response) => {
+router.delete('/:id', authenticate, checkPermission('Patients', 'delete'), async (req, res) => {
   const { id } = req.params;
   try {
     const { rows } = await pool.query('DELETE FROM patients WHERE id = $1 RETURNING *', [id]);
@@ -83,4 +83,4 @@ router.delete('/:id', authenticate, checkPermission('Patients', 'delete'), async
   }
 });
 
-export default router;
+module.exports = router;
