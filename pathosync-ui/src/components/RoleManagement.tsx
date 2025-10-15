@@ -3,7 +3,7 @@ import { apiClient } from '../utils/apiClient';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Input } from './ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { Checkbox } from './ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
 
 interface Permission {
@@ -22,7 +22,6 @@ interface Role {
 export function RoleManagement() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [newRoleName, setNewRoleName] = useState('');
   const [newRoleDescription, setNewRoleDescription] = useState('');
 
@@ -33,26 +32,34 @@ export function RoleManagement() {
 
   const fetchRoles = async () => {
     const response = await apiClient.get('/roles');
-    setRoles(response.data);
+    if (response.success) {
+      setRoles(response.data);
+    }
   };
 
   const fetchPermissions = async () => {
-    const response = await apiClient.get('/permissions');
-    setPermissions(response.data);
+    const response = await apiClient.get('/roles/permissions');
+    if (response.success) {
+      setPermissions(response.data);
+    }
   };
 
   const handleCreateRole = async () => {
     const response = await apiClient.post('/roles', { name: newRoleName, description: newRoleDescription });
-    setRoles([...roles, response.data]);
-    setNewRoleName('');
-    setNewRoleDescription('');
+    if (response.success) {
+      fetchRoles();
+      setNewRoleName('');
+      setNewRoleDescription('');
+    }
   };
 
   const handleUpdateRole = async (roleId: string, updatedPermissions: string[]) => {
     const role = roles.find(r => r.id === roleId);
     if (role) {
       const response = await apiClient.put(`/roles/${roleId}`, { ...role, permissions: updatedPermissions });
-      fetchRoles();
+      if (response.success) {
+        fetchRoles();
+      }
     }
   };
 
@@ -124,12 +131,28 @@ interface RolePermissionsEditorProps {
 function RolePermissionsEditor({ role, permissions, onSave }: RolePermissionsEditorProps) {
   const [selectedPermissions, setSelectedPermissions] = useState(role.permissions.map(p => p.id));
 
-  const handlePermissionChange = (permissionId: string) => {
-    if (selectedPermissions.includes(permissionId)) {
-      setSelectedPermissions(selectedPermissions.filter(id => id !== permissionId));
-    } else {
-      setSelectedPermissions([...selectedPermissions, permissionId]);
+  const groupedPermissions = permissions.reduce((acc, permission) => {
+    if (!acc[permission.module]) {
+      acc[permission.module] = [];
     }
+    acc[permission.module].push(permission);
+    return acc;
+  }, {} as Record<string, Permission[]>);
+
+  const handlePermissionChange = (permissionId: string) => {
+    setSelectedPermissions(prev => 
+      prev.includes(permissionId) 
+        ? prev.filter(id => id !== permissionId) 
+        : [...prev, permissionId]
+    );
+  };
+
+  const handleSelectAllModule = (module: string, isSelected: boolean) => {
+    const modulePermissionIds = groupedPermissions[module].map(p => p.id);
+    setSelectedPermissions(prev => {
+      const otherPermissions = prev.filter(id => !modulePermissionIds.includes(id));
+      return isSelected ? [...otherPermissions, ...modulePermissionIds] : otherPermissions;
+    });
   };
 
   const handleSave = () => {
@@ -138,17 +161,36 @@ function RolePermissionsEditor({ role, permissions, onSave }: RolePermissionsEdi
 
   return (
     <div className="space-y-4">
-      {permissions.map(permission => (
-        <div key={permission.id} className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id={`perm-${permission.id}`}
-            checked={selectedPermissions.includes(permission.id)}
-            onChange={() => handlePermissionChange(permission.id)}
-          />
-          <label htmlFor={`perm-${permission.id}`}>{permission.module} - {permission.action}</label>
-        </div>
-      ))}
+      {Object.entries(groupedPermissions).map(([module, modulePermissions]) => {
+        const allSelected = modulePermissions.every(p => selectedPermissions.includes(p.id));
+        return (
+          <div key={module} className="p-4 border rounded-lg">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">{module}</h3>
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  id={`select-all-${module}`}
+                  checked={allSelected} 
+                  onCheckedChange={(checked) => handleSelectAllModule(module, !!checked)} 
+                />
+                <label htmlFor={`select-all-${module}`}>Select All</label>
+              </div>
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {modulePermissions.map(permission => (
+                <div key={permission.id} className="flex items-center gap-2">
+                  <Checkbox
+                    id={`perm-${permission.id}`}
+                    checked={selectedPermissions.includes(permission.id)}
+                    onCheckedChange={() => handlePermissionChange(permission.id)}
+                  />
+                  <label htmlFor={`perm-${permission.id}`}>{permission.action}</label>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
       <Button onClick={handleSave}>Save Changes</Button>
     </div>
   );

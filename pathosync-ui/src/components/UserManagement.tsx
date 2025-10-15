@@ -26,22 +26,29 @@ import {
   Filter
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Role } from '../types/permissions';
+import { Role, User, FilterTemplate } from '../types/index';
 import { PermissionDisplay, PermissionCheckboxes } from './PermissionDisplay';
-import { usePermissions } from '../hooks/usePermissions';
+import { useAuthContext } from '../contexts/AuthContext';
 import { PermissionGate } from './PermissionGate';
 import { Progress } from './ui/progress';
 
 // ... (interface definitions)
 
-export function UserManagement({ currentUser: propCurrentUser }: UserManagementProps = {}) {
-  const [users, setUsers] = useState([]);
-  const [roles, setRoles] = useState([]);
+export function UserManagement() {
+  const { hasPermission } = useAuthContext();
+  const [users, setUsers] = useState<User[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filters, setFilters] = useState({ status: 'all', department: 'all' });
+  const [filters, setFilters] = useState({ status: 'all', role: 'all' });
   const [showFilters, setShowFilters] = useState(false);
-  const [filterTemplates, setFilterTemplates] = useState([]);
+  const [filterTemplates, setFilterTemplates] = useState<FilterTemplate[]>([]);
   const [newTemplateName, setNewTemplateName] = useState('');
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isEditUserModalOpen, setIsEditUserModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+
+
 
   // ... (other state variables)
 
@@ -53,32 +60,56 @@ export function UserManagement({ currentUser: propCurrentUser }: UserManagementP
 
   const fetchUsers = async () => {
     const response = await apiClient.get('/users', { params: { ...filters, search: searchTerm } });
-    setUsers(response.data);
+    if(response.success) {
+      setUsers(response.data as User[]);
+    }
   };
 
   const fetchRoles = async () => {
-    // ... (implementation)
+    const response = await apiClient.get('/roles');
+    if(response.success) {
+      setRoles(response.data as Role[]);
+    }
   };
 
   const fetchFilterTemplates = async () => {
-    const response = await apiClient.get('/filter-templates');
-    setFilterTemplates(response.data);
+    const response = await apiClient..get('/filter-templates');
+    if(response.success) {
+      setFilterTemplates(response.data as FilterTemplate[]);
+    }
   };
 
   const handleSaveFilterTemplate = async () => {
     const response = await apiClient.post('/filter-templates', { name: newTemplateName, filters });
-    setFilterTemplates([...filterTemplates, response.data]);
-    setNewTemplateName('');
+    if(response.success) {
+      fetchFilterTemplates();
+      setNewTemplateName('');
+    }
   };
+
+  const handleBulkDelete = async () => {
+    await apiClient.post('/users/bulk-delete', { userIds: selectedUsers });
+    fetchUsers();
+    setSelectedUsers([]);
+  };
+
 
   // ... (other handlers)
 
   return (
-    <PermissionGate
-      // ... (permission gate props)
-    >
+    <PermissionGate module="Users" action="list">
       <div className="p-6 space-y-6">
-        {/* ... (header, stats) */}
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold">User Management</h1>
+          <PermissionGate module="Users" action="create">
+            <Button onClick={() => setIsAddUserModalOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add User
+            </Button>
+          </PermissionGate>
+        </div>
+
+        {/* ... (stats) */}
         
         <div className="flex gap-4">
           <div className="relative flex-1">
@@ -107,16 +138,13 @@ export function UserManagement({ currentUser: propCurrentUser }: UserManagementP
                             <SelectItem value="Inactive">Inactive</SelectItem>
                         </SelectContent>
                     </Select>
-                    <Select value={filters.department} onValueChange={(value) => setFilters(f => ({...f, department: value}))}>
-                        <SelectTrigger><SelectValue placeholder="Filter by department" /></SelectTrigger>
+                    <Select value={filters.role} onValueChange={(value) => setFilters(f => ({...f, role: value}))}>
+                        <SelectTrigger><SelectValue placeholder="Filter by role" /></SelectTrigger>
                         <SelectContent>
-                             <SelectItem value="all">All Departments</SelectItem>
-                             <SelectItem value="Administration">Administration</SelectItem>
-                             <SelectItem value="Laboratory">Laboratory</SelectItem>
-                             <SelectItem value="Collection">Collection</SelectItem>
-                             <SelectItem value="Data Entry">Data Entry</SelectItem>
-                             <SelectItem value="Operations">Operations</SelectItem>
-                             <SelectItem value="Customer Service">Customer Service</SelectItem>
+                             <SelectItem value="all">All Roles</SelectItem>
+                             {roles.map(role => (
+                               <SelectItem key={role.id} value={role.name}>{role.name}</SelectItem>
+                             ))}
                         </SelectContent>
                     </Select>
                 </div>
@@ -138,7 +166,92 @@ export function UserManagement({ currentUser: propCurrentUser }: UserManagementP
             </Card>
         )}
 
-        {/* ... (bulk actions, table, modals) */}
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <PermissionGate module="Users" action="delete">
+              <Button variant="destructive" disabled={selectedUsers.length === 0} onClick={handleBulkDelete}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete ({selectedUsers.length})
+              </Button>
+            </PermissionGate>
+          </div>
+        </div>
+
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead padding="checkbox">
+                  <Checkbox
+                    checked={selectedUsers.length === users.length && users.length > 0}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedUsers(users.map(u => u.id));
+                      } else {
+                        setSelectedUsers([]);
+                      }
+                    }}
+                  />
+                </TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map(user => (
+                <TableRow key={user.id}>
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      checked={selectedUsers.includes(user.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedUsers([...selectedUsers, user.id]);
+                        } else {
+                          setSelectedUsers(selectedUsers.filter(id => id !== user.id));
+                        }
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>{user.name}</TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.role}</TableCell>
+                  <TableCell>{user.is_active ? 'Active' : 'Inactive'}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <PermissionGate module="Users" action="edit">
+                          <DropdownMenuItem onClick={() => {
+                            setEditingUser(user);
+                            setIsEditUserModalOpen(true);
+                          }}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </DropdownMenuItem>
+                        </PermissionGate>
+                        <PermissionGate module="Users" action="delete">
+                          <DropdownMenuItem onClick={() => handleBulkDelete()}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete
+                          </DropdownMenuItem>
+                        </PermissionGate>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+
+        {/* Add/Edit Modals Here */}
       </div>
     </PermissionGate>
   );

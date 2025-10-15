@@ -79,6 +79,10 @@ class ApiClient {
         return this.request<T>(endpoint, { method: 'PUT', body: JSON.stringify(data) });
     }
 
+    public patch<T>(endpoint: string, data: any): Promise<ApiResponse<T>> {
+        return this.request<T>(endpoint, { method: 'PATCH', body: JSON.stringify(data) });
+    }
+
     public delete<T>(endpoint: string): Promise<ApiResponse<T>> {
         return this.request<T>(endpoint, { method: 'DELETE' });
     }

@@ -1125,3 +1125,190 @@ INSERT INTO actions (name) VALUES
 ('view-all-data'),
 ('assign-collection-center');
 
+
+-- ============================
+-- 1) Insert permissions (module x action)
+--    Uses scalar sub-selects so it doesn't rely on numeric IDs
+-- ============================
+INSERT INTO permissions (module_id, action_id) VALUES
+  ((SELECT id FROM modules WHERE name='Dashboard'),       (SELECT id FROM actions WHERE name='view')),
+  ((SELECT id FROM modules WHERE name='Dashboard'),       (SELECT id FROM actions WHERE name='list')),
+  ((SELECT id FROM modules WHERE name='Dashboard'),       (SELECT id FROM actions WHERE name='export')),
+
+  ((SELECT id FROM modules WHERE name='Billing'),         (SELECT id FROM actions WHERE name='view')),
+  ((SELECT id FROM modules WHERE name='Billing'),         (SELECT id FROM actions WHERE name='list')),
+  ((SELECT id FROM modules WHERE name='Billing'),         (SELECT id FROM actions WHERE name='create')),
+  ((SELECT id FROM modules WHERE name='Billing'),         (SELECT id FROM actions WHERE name='edit')),
+  ((SELECT id FROM modules WHERE name='Billing'),         (SELECT id FROM actions WHERE name='delete')),
+  ((SELECT id FROM modules WHERE name='Billing'),         (SELECT id FROM actions WHERE name='process-payment')),
+  ((SELECT id FROM modules WHERE name='Billing'),         (SELECT id FROM actions WHERE name='view-transactions')),
+  ((SELECT id FROM modules WHERE name='Billing'),         (SELECT id FROM actions WHERE name='export')),
+
+  ((SELECT id FROM modules WHERE name='Patients'),        (SELECT id FROM actions WHERE name='view')),
+  ((SELECT id FROM modules WHERE name='Patients'),        (SELECT id FROM actions WHERE name='list')),
+  ((SELECT id FROM modules WHERE name='Patients'),        (SELECT id FROM actions WHERE name='create')),
+  ((SELECT id FROM modules WHERE name='Patients'),        (SELECT id FROM actions WHERE name='edit')),
+  ((SELECT id FROM modules WHERE name='Patients'),        (SELECT id FROM actions WHERE name='delete')),
+  ((SELECT id FROM modules WHERE name='Patients'),        (SELECT id FROM actions WHERE name='export')),
+  ((SELECT id FROM modules WHERE name='Patients'),        (SELECT id FROM actions WHERE name='import')),
+
+  ((SELECT id FROM modules WHERE name='Doctors'),         (SELECT id FROM actions WHERE name='view')),
+  ((SELECT id FROM modules WHERE name='Doctors'),         (SELECT id FROM actions WHERE name='list')),
+  ((SELECT id FROM modules WHERE name='Doctors'),         (SELECT id FROM actions WHERE name='create')),
+  ((SELECT id FROM modules WHERE name='Doctors'),         (SELECT id FROM actions WHERE name='edit')),
+  ((SELECT id FROM modules WHERE name='Doctors'),         (SELECT id FROM actions WHERE name='delete')),
+  ((SELECT id FROM modules WHERE name='Doctors'),         (SELECT id FROM actions WHERE name='manage_doctors')),
+
+  ((SELECT id FROM modules WHERE name='Tests'),           (SELECT id FROM actions WHERE name='view')),
+  ((SELECT id FROM modules WHERE name='Tests'),           (SELECT id FROM actions WHERE name='list')),
+  ((SELECT id FROM modules WHERE name='Tests'),           (SELECT id FROM actions WHERE name='create')),
+  ((SELECT id FROM modules WHERE name='Tests'),           (SELECT id FROM actions WHERE name='edit')),
+  ((SELECT id FROM modules WHERE name='Tests'),           (SELECT id FROM actions WHERE name='delete')),
+  ((SELECT id FROM modules WHERE name='Tests'),           (SELECT id FROM actions WHERE name='manage_tests')),
+  ((SELECT id FROM modules WHERE name='Tests'),           (SELECT id FROM actions WHERE name='export')),
+  ((SELECT id FROM modules WHERE name='Tests'),           (SELECT id FROM actions WHERE name='import')),
+
+  ((SELECT id FROM modules WHERE name='Reports'),         (SELECT id FROM actions WHERE name='view')),
+  ((SELECT id FROM modules WHERE name='Reports'),         (SELECT id FROM actions WHERE name='list')),
+  ((SELECT id FROM modules WHERE name='Reports'),         (SELECT id FROM actions WHERE name='create')),
+  ((SELECT id FROM modules WHERE name='Reports'),         (SELECT id FROM actions WHERE name='edit')),
+  ((SELECT id FROM modules WHERE name='Reports'),         (SELECT id FROM actions WHERE name='delete')),
+  ((SELECT id FROM modules WHERE name='Reports'),         (SELECT id FROM actions WHERE name='approve')),
+  ((SELECT id FROM modules WHERE name='Reports'),         (SELECT id FROM actions WHERE name='reject')),
+  ((SELECT id FROM modules WHERE name='Reports'),         (SELECT id FROM actions WHERE name='export')),
+
+  ((SELECT id FROM modules WHERE name='Users'),           (SELECT id FROM actions WHERE name='view')),
+  ((SELECT id FROM modules WHERE name='Users'),           (SELECT id FROM actions WHERE name='list')),
+  ((SELECT id FROM modules WHERE name='Users'),           (SELECT id FROM actions WHERE name='create')),
+  ((SELECT id FROM modules WHERE name='Users'),           (SELECT id FROM actions WHERE name='edit')),
+  ((SELECT id FROM modules WHERE name='Users'),           (SELECT id FROM actions WHERE name='delete')),
+  ((SELECT id FROM modules WHERE name='Users'),           (SELECT id FROM actions WHERE name='manage_users')),
+
+  ((SELECT id FROM modules WHERE name='Subscription'),    (SELECT id FROM actions WHERE name='view')),
+  ((SELECT id FROM modules WHERE name='Subscription'),    (SELECT id FROM actions WHERE name='list')),
+  ((SELECT id FROM modules WHERE name='Subscription'),    (SELECT id FROM actions WHERE name='create')),
+  ((SELECT id FROM modules WHERE name='Subscription'),    (SELECT id FROM actions WHERE name='edit')),
+  ((SELECT id FROM modules WHERE name='Subscription'),    (SELECT id FROM actions WHERE name='delete')),
+
+  ((SELECT id FROM modules WHERE name='Statistics'),      (SELECT id FROM actions WHERE name='view')),
+  ((SELECT id FROM modules WHERE name='Statistics'),      (SELECT id FROM actions WHERE name='list')),
+  ((SELECT id FROM modules WHERE name='Statistics'),      (SELECT id FROM actions WHERE name='export')),
+
+  ((SELECT id FROM modules WHERE name='Test Categories'), (SELECT id FROM actions WHERE name='view')),
+  ((SELECT id FROM modules WHERE name='Test Categories'), (SELECT id FROM actions WHERE name='list')),
+  ((SELECT id FROM modules WHERE name='Test Categories'), (SELECT id FROM actions WHERE name='create')),
+  ((SELECT id FROM modules WHERE name='Test Categories'), (SELECT id FROM actions WHERE name='edit')),
+  ((SELECT id FROM modules WHERE name='Test Categories'), (SELECT id FROM actions WHERE name='delete')),
+
+  ((SELECT id FROM modules WHERE name='Test Parameters'), (SELECT id FROM actions WHERE name='view')),
+  ((SELECT id FROM modules WHERE name='Test Parameters'), (SELECT id FROM actions WHERE name='list')),
+  ((SELECT id FROM modules WHERE name='Test Parameters'), (SELECT id FROM actions WHERE name='create')),
+  ((SELECT id FROM modules WHERE name='Test Parameters'), (SELECT id FROM actions WHERE name='edit')),
+  ((SELECT id FROM modules WHERE name='Test Parameters'), (SELECT id FROM actions WHERE name='delete')),
+
+  ((SELECT id FROM modules WHERE name='Test Packages'),   (SELECT id FROM actions WHERE name='view')),
+  ((SELECT id FROM modules WHERE name='Test Packages'),   (SELECT id FROM actions WHERE name='list')),
+  ((SELECT id FROM modules WHERE name='Test Packages'),   (SELECT id FROM actions WHERE name='create')),
+  ((SELECT id FROM modules WHERE name='Test Packages'),   (SELECT id FROM actions WHERE name='edit')),
+  ((SELECT id FROM modules WHERE name='Test Packages'),   (SELECT id FROM actions WHERE name='delete')),
+  ((SELECT id FROM modules WHERE name='Test Packages'),   (SELECT id FROM actions WHERE name='export')),
+
+  ((SELECT id FROM modules WHERE name='Collection Centers'), (SELECT id FROM actions WHERE name='view')),
+  ((SELECT id FROM modules WHERE name='Collection Centers'), (SELECT id FROM actions WHERE name='list')),
+  ((SELECT id FROM modules WHERE name='Collection Centers'), (SELECT id FROM actions WHERE name='create')),
+  ((SELECT id FROM modules WHERE name='Collection Centers'), (SELECT id FROM actions WHERE name='edit')),
+  ((SELECT id FROM modules WHERE name='Collection Centers'), (SELECT id FROM actions WHERE name='delete')),
+  ((SELECT id FROM modules WHERE name='Collection Centers'), (SELECT id FROM actions WHERE name='assign-collection-center')),
+
+  ((SELECT id FROM modules WHERE name='SaaS'),            (SELECT id FROM actions WHERE name='view-all-data')),
+  ((SELECT id FROM modules WHERE name='SaaS'),            (SELECT id FROM actions WHERE name='manage_billing')),
+  ((SELECT id FROM modules WHERE name='SaaS'),            (SELECT id FROM actions WHERE name='export'))
+ON CONFLICT DO NOTHING;  -- safe if run repeatedly
+
+-- ============================
+-- 2) Role -> Permission assignments
+--    Use INSERT ... SELECT so we don't assume permission numeric ids.
+--    ON CONFLICT DO NOTHING keeps it idempotent.
+-- ============================
+
+-- 2.a Admin -> all permissions
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+CROSS JOIN permissions p
+WHERE r.name = 'Admin'
+ON CONFLICT DO NOTHING;
+
+-- 2.b Manager -> operational permissions (dashboard, billing, patients, tests subset, packages, reports, doctors, collection centers)
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'Manager'
+  AND (
+       (p.module_id = (SELECT id FROM modules WHERE name='Dashboard') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Billing') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list','create','edit','export')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Patients') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list','create','edit','export')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Tests') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list','edit')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Test Packages') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list','create','edit','delete')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Reports') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list','create','edit','export')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Doctors') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list','create','edit','delete')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Collection Centers') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list','create','edit','assign-collection-center')))
+  )
+ON CONFLICT DO NOTHING;
+
+-- 2.c Technician -> test execution and report drafting
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'Technician'
+  AND (
+       (p.module_id = (SELECT id FROM modules WHERE name='Tests') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list','manage_tests')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Reports') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','create','edit')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Patients') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list')))
+  )
+ON CONFLICT DO NOTHING;
+
+-- 2.d Collection Agent -> patient lookup & collection center interaction
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'Collection Agent'
+  AND (
+       (p.module_id = (SELECT id FROM modules WHERE name='Patients') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list','create')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Billing') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Collection Centers') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list')))
+  )
+ON CONFLICT DO NOTHING;
+
+-- 2.e Data Entry -> create/edit/list for patients, bills, tests; limited reports drafting
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'Data Entry'
+  AND (
+       (p.module_id = (SELECT id FROM modules WHERE name='Patients') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('create','edit','list')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Billing') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('create','edit','list')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Tests') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('list','view')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Reports') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('create','edit')))
+  )
+ON CONFLICT DO NOTHING;
+
+-- 2.f Viewer -> read-only access across common modules
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r, permissions p
+WHERE r.name = 'Viewer'
+  AND (
+       (p.module_id = (SELECT id FROM modules WHERE name='Dashboard') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Billing') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Patients') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Tests') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Reports') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Doctors') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Collection Centers') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view','list')))
+    OR (p.module_id = (SELECT id FROM modules WHERE name='Statistics') AND p.action_id IN (SELECT id FROM actions WHERE name IN ('view')))
+  )
+ON CONFLICT DO NOTHING;
+
+
+

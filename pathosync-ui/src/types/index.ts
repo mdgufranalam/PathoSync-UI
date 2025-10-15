@@ -80,8 +80,8 @@ export interface Tenant {
 }
 
 export interface User {
-    id: string; // UUID
-    tenant_id: string; // UUID
+    id: string; 
+    tenant_id: string; 
     email: string;
     password_hash: string;
     two_factor_enabled?: boolean;
@@ -91,7 +91,7 @@ export interface User {
     last_name: string;
     phone?: string;
     alternative_phone?: string;
-    date_of_birth?: string; // DATE
+    date_of_birth?: string; 
     gender?: string;
     role: Role;
     department?: string;
@@ -99,10 +99,10 @@ export interface User {
     qualification?: string;
     registration_number?: string;
     experience_years?: number;
-    joining_date?: string; // DATE
-    permissions?: any; // JSONB
-    allowed_modules?: any; // JSONB
-    working_hours?: any; // JSONB
+    joining_date?: string; 
+    permissions?: any; 
+    allowed_modules?: any; 
+    working_hours?: any; 
     address?: string;
     city?: string;
     state?: string;
@@ -112,16 +112,16 @@ export interface User {
     is_active?: boolean;
     account_locked?: boolean;
     failed_login_attempts?: number;
-    last_login?: string; // TIMESTAMP
-    last_activity?: string; // TIMESTAMP
+    last_login?: string; 
+    last_activity?: string; 
     password_reset_token?: string;
-    password_reset_expires?: string; // TIMESTAMP
+    password_reset_expires?: string; 
     email_verified?: boolean;
     email_verification_token?: string;
     avatar_url?: string;
     bio?: string;
-    created_at?: string; // TIMESTAMP
-    updated_at?: string; // TIMESTAMP
+    created_at?: string; 
+    updated_at?: string; 
     role_id?: number;
     name: string;
     features: string[];
@@ -131,7 +131,11 @@ export interface User {
     profile_picture?: string;
     join_date?: string;
 }
-
+export interface FilterTemplate {
+    id: string;
+    name: string;
+    filters: any;
+  }
 export interface UserSession {
     id: string; // UUID
     user_id: string; // UUID

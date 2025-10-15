@@ -5,6 +5,8 @@ import { Badge } from './ui/badge';
 import { Alert, AlertDescription } from './ui/alert';
 import { Plus, FileText, Users, UserCheck, TestTube, Package, BarChart3, Building2, Crown, Lock, ArrowRight } from 'lucide-react';
 import { NotificationCenter } from './NotificationCenter';
+import { useAuthContext } from '../contexts/AuthContext';
+import { PermissionGate } from './PermissionGate';
 
 interface User {
   id: string;
@@ -16,7 +18,6 @@ interface User {
   joinDate: string;
   subscriptionPlan: 'basic' | 'starter' | 'professional' | 'enterprise';
   organizationName: string;
-  permissions: string[];
 }
 
 interface DashboardProps {
@@ -25,6 +26,8 @@ interface DashboardProps {
 }
 
 export function Dashboard({ onNavigate, user }: DashboardProps) {
+  const { hasPermission } = useAuthContext();
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good Morning';
@@ -32,92 +35,80 @@ export function Dashboard({ onNavigate, user }: DashboardProps) {
     return 'Good Evening';
   };
 
-  // Check subscription access
-  const hasCollectionCentersAccess = user.subscriptionPlan === 'professional' || user.subscriptionPlan === 'enterprise';
-  
-  const getNavigationTiles = () => {
-    const baseTiles = [
-      {
-        title: 'Bills',
-        icon: FileText,
-        color: 'bg-blue-500',
-        description: 'Manage invoices and payments',
-        onClick: () => onNavigate('billing')
-      },
-      {
-        title: 'Reports',
-        icon: BarChart3,
-        color: 'bg-green-500',
-        description: 'View analytical reports',
-        onClick: () => onNavigate('reports')
-      },
-      {
-        title: 'Patients',
-        icon: Users,
-        color: 'bg-purple-500',
-        description: 'Patient management',
-        onClick: () => onNavigate('patients')
-      },
-      {
-        title: 'Doctors',
-        icon: UserCheck,
-        color: 'bg-orange-500',
-        description: 'Doctor profiles',
-        onClick: () => onNavigate('doctors')
-      },
-      {
-        title: 'Tests',
-        icon: TestTube,
-        color: 'bg-red-500',
-        description: 'Laboratory tests',
-        onClick: () => onNavigate('tests')
-      },
-      {
-        title: 'Test Package',
-        icon: Package,
-        color: 'bg-indigo-500',
-        description: 'Test packages and bundles',
-        onClick: () => onNavigate('packages')
-      }
-    ];
-
-    // Add Collection Centers for Professional/Enterprise users
-    if (hasCollectionCentersAccess) {
-      baseTiles.push({
-        title: 'Collection Centers',
-        icon: Building2,
-        color: 'bg-teal-500',
-        description: 'Manage collection centers',
-        onClick: () => onNavigate('collection-centers')
-      });
+  const navigationTiles = [
+    {
+      title: 'Bills',
+      icon: FileText,
+      color: 'bg-blue-500',
+      description: 'Manage invoices and payments',
+      onClick: () => onNavigate('billing'),
+      module: 'Billing',
+      action: 'list'
+    },
+    {
+      title: 'Reports',
+      icon: BarChart3,
+      color: 'bg-green-500',
+      description: 'View analytical reports',
+      onClick: () => onNavigate('reports'),
+      module: 'Reports',
+      action: 'list'
+    },
+    {
+      title: 'Patients',
+      icon: Users,
+      color: 'bg-purple-500',
+      description: 'Patient management',
+      onClick: () => onNavigate('patients'),
+      module: 'Patients',
+      action: 'list'
+    },
+    {
+      title: 'Doctors',
+      icon: UserCheck,
+      color: 'bg-orange-500',
+      description: 'Doctor profiles',
+      onClick: () => onNavigate('doctors'),
+      module: 'Doctors',
+      action: 'list'
+    },
+    {
+      title: 'Tests',
+      icon: TestTube,
+      color: 'bg-red-500',
+      description: 'Laboratory tests',
+      onClick: () => onNavigate('tests'),
+      module: 'Tests',
+      action: 'list'
+    },
+    {
+      title: 'Test Package',
+      icon: Package,
+      color: 'bg-indigo-500',
+      description: 'Test packages and bundles',
+      onClick: () => onNavigate('packages'),
+      module: 'Test Packages',
+      action: 'list'
+    },
+    {
+      title: 'Collection Centers',
+      icon: Building2,
+      color: 'bg-teal-500',
+      description: 'Manage collection centers',
+      onClick: () => onNavigate('collection-centers'),
+      module: 'Collection Centers',
+      action: 'list'
     }
+  ];
 
-    return baseTiles;
-  };
-
-  const navigationTiles = getNavigationTiles();
-
-  // Subscription-based stats
-  const getQuickStats = () => {
-    const baseStats = [
-      { label: 'Today\'s Bills', value: '24', change: '+12%' },
-      { label: 'Total Revenue', value: '₹45,230', change: '+8%' },
-      { label: 'Pending Reports', value: '7', change: '-3%' },
-      { label: 'Active Patients', value: '156', change: '+15%' }
-    ];
-
-    // Add collection center stats for Professional/Enterprise users
-    if (hasCollectionCentersAccess) {
-      baseStats.push(
-        { label: 'Collection Centers', value: '8', change: '+2%' },
-        { label: 'Pending Samples', value: '13', change: '-5%' }
-      );
-    }
-
-    return baseStats;
-  };
-
-  const quickStats = getQuickStats();
+  const quickStats = [
+    { label: 'Today\'s Bills', value: '24', change: '+12%', module: 'Dashboard', action: 'view' },
+    { label: 'Total Revenue', value: '₹45,230', change: '+8%', module: 'Dashboard', action: 'view' },
+    { label: 'Pending Reports', value: '7', change: '-3%', module: 'Dashboard', action: 'view' },
+    { label: 'Active Patients', value: '156', change: '+15%', module: 'Dashboard', action: 'view' },
+    { label: 'Collection Centers', value: '8', change: '+2%', module: 'Collection Centers', action: 'list' },
+    { label: 'Pending Samples', value: '13', change: '-5%', module: 'Collection Centers', action: 'list' }
+  ];
 
   return (
     <div className="p-6 space-y-6">
@@ -145,20 +136,22 @@ export function Dashboard({ onNavigate, user }: DashboardProps) {
         </div>
         
         <div className="flex items-center gap-4">
-          <Button 
-            onClick={() => onNavigate('billing')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            Create Lab Bill
-          </Button>
+          <PermissionGate module="Billing" action="create">
+            <Button 
+              onClick={() => onNavigate('billing')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              Create Lab Bill
+            </Button>
+          </PermissionGate>
           <NotificationCenter />
         </div>
 
       </div>
 
-      {/* Upgrade Banner for Basic/Starter Users */}
-      {!hasCollectionCentersAccess && (
+      {/* Upgrade Banner for non-professional/enterprise Users */}
+      {user.subscriptionPlan !== 'professional' && user.subscriptionPlan !== 'enterprise' && (
         <Alert className="border-orange-200 bg-gradient-to-r from-orange-50 to-yellow-50">
           <Crown className="h-4 w-4 text-orange-600" />
           <AlertDescription>
@@ -185,21 +178,23 @@ export function Dashboard({ onNavigate, user }: DashboardProps) {
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {quickStats.map((stat, index) => (
-          <Card key={index} className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-500">{stat.label}</p>
-                <p className="text-2xl mt-1">{stat.value}</p>
+          <PermissionGate key={index} module={stat.module} action={stat.action}>
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-500">{stat.label}</p>
+                  <p className="text-2xl mt-1">{stat.value}</p>
+                </div>
+                <div className={`text-xs px-2 py-1 rounded-full ${
+                  stat.change.startsWith('+') 
+                    ? 'bg-green-100 text-green-600' 
+                    : 'bg-red-100 text-red-600'
+                }`}>
+                  {stat.change}
+                </div>
               </div>
-              <div className={`text-xs px-2 py-1 rounded-full ${
-                stat.change.startsWith('+') 
-                  ? 'bg-green-100 text-green-600' 
-                  : 'bg-red-100 text-red-600'
-              }`}>
-                {stat.change}
-              </div>
-            </div>
-          </Card>
+            </Card>
+          </PermissionGate>
         ))}
       </div>
 
@@ -208,21 +203,22 @@ export function Dashboard({ onNavigate, user }: DashboardProps) {
         <h2 className="text-lg mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {navigationTiles.map((tile, index) => (
-            <Card 
-              key={index}
-              className="p-6 cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-transparent hover:border-l-blue-500"
-              onClick={tile.onClick}
-            >
-              <div className="flex items-start gap-4">
-                <div className={`p-3 rounded-lg ${tile.color}`}>
-                  <tile.icon className="w-6 h-6 text-white" />
+            <PermissionGate key={index} module={tile.module} action={tile.action}>
+              <Card 
+                className="p-6 cursor-pointer hover:shadow-lg transition-shadow border-l-4 border-l-transparent hover:border-l-blue-500"
+                onClick={tile.onClick}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`p-3 rounded-lg ${tile.color}`}>
+                    <tile.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg mb-1">{tile.title}</h3>
+                    <p className="text-sm text-slate-500">{tile.description}</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="text-lg mb-1">{tile.title}</h3>
-                  <p className="text-sm text-slate-500">{tile.description}</p>
-                </div>
-              </div>
-            </Card>
+              </Card>
+            </PermissionGate>
           ))}
         </div>
       </div>

@@ -56,12 +56,22 @@ router.put('/:id', authenticate, checkPermission('Users', 'edit'), async (req, r
       return res.status(404).json({ message: 'Role not found' });
     }
 
-    await db.query('DELETE FROM role_permissions WHERE role_id = $1', [id]);
+    const { rows: existingPermissions } = await db.query('SELECT permission_id FROM role_permissions WHERE role_id = $1', [id]);
+    const existingPermissionIds = existingPermissions.map(p => p.permission_id);
 
-    const permissionPromises = permissions.map(permission_id => {
-      return db.query('INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2)', [id, permission_id]);
-    });
-    await Promise.all(permissionPromises);
+    const permissionsToAdd = permissions.filter(p => !existingPermissionIds.includes(p));
+    const permissionsToRemove = existingPermissionIds.filter(p => !permissions.includes(p));
+
+    if (permissionsToRemove.length > 0) {
+        await db.query('DELETE FROM role_permissions WHERE role_id = $1 AND permission_id = ANY($2::int[])', [id, permissionsToRemove]);
+    }
+
+    if (permissionsToAdd.length > 0) {
+        const insertPromises = permissionsToAdd.map(permission_id => {
+            return db.query('INSERT INTO role_permissions (role_id, permission_id) VALUES ($1, $2)', [id, permission_id]);
+        });
+        await Promise.all(insertPromises);
+    }
 
     res.json(rows[0]);
   } catch (err) {
@@ -69,6 +79,7 @@ router.put('/:id', authenticate, checkPermission('Users', 'edit'), async (req, r
     res.status(500).send('Server Error');
   }
 });
+
 
 // Delete a role
 router.delete('/:id', authenticate, checkPermission('Users', 'delete'), async (req, res) => {
