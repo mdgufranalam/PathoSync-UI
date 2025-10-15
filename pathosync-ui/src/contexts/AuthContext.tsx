@@ -21,11 +21,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const { user, token, tenantId, isAuthenticated, loading, login, logout } = useAuth();
   const { tenant, loading: tenantLoading } = useTenant(tenantId);
-  const { permissions, loading: permissionsLoading } = usePermissions(user?.role as Role, user?.id);
+  const { permissions, loading: permissionsLoading } = usePermissions(user?.role, user?.id);
 
   const hasPermission = (module: string, action: string): boolean => {
-    if (!permissions) return false;
-    if (user?.role === 'admin') return true; // Admins have all permissions
+    if (!permissions || !user) return false;
+    if (user.role === 'admin') return true; // Admins have all permissions
     return permissions[module]?.[action] ?? false;
   };
 

@@ -8,7 +8,7 @@ export interface Permissions {
     };
 }
 
-export const usePermissions = (role: Role, userId: string) => {
+export const usePermissions = (role: Role | null | undefined, userId: string | null | undefined) => {
     const [permissions, setPermissions] = useState<Permissions>({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
