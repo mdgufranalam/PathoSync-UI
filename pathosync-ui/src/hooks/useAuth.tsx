@@ -1,88 +1,67 @@
-import { useState, useContext, createContext, ReactNode, useEffect, useCallback } from 'react';
-import { User } from '../types/index';
+import { useState, useEffect } from 'react';
 import { apiClient } from '../utils/apiClient';
+import { User } from '../types/index';
 
-interface AuthContextType {
-  currentUser: User | null;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  hasPermission: (permission: string) => boolean;
-}
-
-const AuthContext = createContext<AuthContextType | null>(null);
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-
-  const fetchCurrentUser = useCallback(async () => {
-    const response = await apiClient.get<User>('/auth/me');
-    if (response.success && response.data) {
-      setCurrentUser(response.data);
-      localStorage.setItem('tenantId', response.data.tenant_id);
-    } else {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('tenantId');
-      setCurrentUser(null);
-    }
-  }, []);
+export const useAuth = () => {
+  const [user, setUser] = useState<User | null>(null);
+  const [tenantId, setTenantId] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      fetchCurrentUser();
-    }
-  }, [fetchCurrentUser]);
+    const checkAuth = async () => {
+      const storedToken = localStorage.getItem('token');
+      const storedTenantId = localStorage.getItem('tenantId');
+      if (storedToken && storedTenantId) {
+        apiClient.setToken(storedToken);
+        try {
+          const res = await apiClient.get('/auth/me');
+          if (res.success) {
+            setUser(res.data as User);
+            setTenantId(storedTenantId);
+            setToken(storedToken);
+          }
+        } catch (error) {
+          logout();
+        }
+      }
+      setLoading(false);
+    };
+    checkAuth();
+  }, []);
 
-  const login = async (email: string, password: string) => {
-    const response = await apiClient.post<{ token: string }>('/auth/login', { email, password });
-    if (response.success && response.data) {
-      localStorage.setItem('authToken', response.data.token);
-      await fetchCurrentUser();
-    } else {
-        throw new Error(response.error || 'Login failed');
-    }
+  const login = (newToken: string, newTenantId: string) => {
+    localStorage.setItem('token', newToken);
+    localStorage.setItem('tenantId', newTenantId);
+    apiClient.setToken(newToken);
+    setToken(newToken);
+    setTenantId(newTenantId);
+    // You might want to fetch user data here again
+    const fetchUser = async () => {
+        const res = await apiClient.get('/auth/me');
+        if(res.success) {
+            setUser(res.data as User);
+        }
+    };
+    fetchUser();
   };
 
   const logout = () => {
-    localStorage.removeItem('authToken');
+    localStorage.removeItem('token');
     localStorage.removeItem('tenantId');
-    setCurrentUser(null);
+    setUser(null);
+    setTenantId(null);
+    setToken(null);
+    apiClient.setToken(null);
   };
 
-  const hasPermission = (permission: string): boolean => {
-    if (!currentUser) return false;
-    
-    const permissions: { [key: string]: string[] } = {
-      admin: ['read', 'write', 'delete', 'manage_users', 'manage_doctors', 'manage_tests', 'manage_billing'],
-      technician: ['read', 'write', 'manage_tests', 'manage_billing'],
-      viewer: ['read']
-    };
-
-    const userRole = currentUser.role || 'viewer';
-    const hasRolePermission = permissions[userRole]?.includes(permission) || false;
-
-    if (permission.startsWith('statistics_')) {
-      return currentUser.features?.includes(permission) && (userRole === 'admin' || userRole === 'manager' || userRole === 'superadmin');
-    }
-
-    if (permission === 'export') {
-      return currentUser.subscription_plan === 'professional' || currentUser.subscription_plan === 'enterprise';
-    }
-
-    return hasRolePermission;
+  return {
+    user,
+    token,
+    tenantId,
+    isAuthenticated: !!user,
+    loading,
+    login,
+    logout,
   };
-
-  return (
-    <AuthContext.Provider value={{ currentUser, login, logout, hasPermission }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
+};

@@ -1,6 +1,45 @@
+export interface Bill {
+    id: string;
+    patient_id: string;
+    doctor_id: string;
+    appointment_id: string;
+    amount: number;
+    payment_status: BillStatus;
+    payment_method: string;
+    transaction_id: string;
+    created_at: string;
+    updated_at: string;
+    patient?: Patient;
+    doctor?: Doctor;
+    status: ReportStatus;
+}
+
+export enum BillStatus {
+    PAID = 'paid',
+    UNPAID = 'unpaid',
+    PENDING = 'pending'
+}
+
+export enum ReportStatus {
+    PENDING = 'pending',
+    GENERATED = 'generated',
+    DELIVERED = 'delivered'
+}
+
+export interface FilterTemplate {
+    id: string;
+    name: string;
+    filters: any;
+}
+
+export interface Role {
+    id: string;
+    name: string;
+    permissions: Record<string, Record<string, boolean>>;
+}
 export type Page = 'dashboard' | 'patients' |'doctors' | 'tests' | 'reports' | 'billing' | 'users' | 'settings' | 'getting-started' | 'subscription' | 'login' | 'signup' | 'password-reset' | 'enhanced-billing' | 'bills' | 'packages' | 'profile' | 'statistics' | 'notifications' | 'collection-centers' | 'upgrade-plan' | 'saas-portal';
 
-export type Role = 'admin' | 'manager' | 'technician' | 'collection-agent' | 'data-entry' | 'viewer'|'superadmin';
+//export type Role = 'admin' | 'manager' | 'technician' | 'collection-agent' | 'data-entry' | 'viewer'|'superadmin';
 
 export interface SubscriptionPlan {
     id: string; // UUID
@@ -375,8 +414,6 @@ export interface PackageTest {
     added_at?: string; // TIMESTAMP
 }
 
-export type BillStatus = 'pending' | 'paid' | 'partially-paid' | 'cancelled';
-export type ReportStatus = 'pending' | 'in-progress' | 'completed' | 'delivered' | 'approved';
 
 export interface Bill {
     id: string; // UUID
@@ -385,7 +422,6 @@ export interface Bill {
     invoice_number?: string;
     reference_number?: string;
     patient_id: string; // UUID
-    doctor_id?: string; // UUID
     referred_by?: string;
     bill_date?: string; // TIMESTAMP
     due_date?: string; // TIMESTAMP
@@ -407,7 +443,6 @@ export interface Bill {
     advance_amount?: number;
     payment_status: BillStatus;
     bill_status?: string;
-    payment_method?: string;
     payment_reference?: string;
     upi_transaction_id?: string;
     notes?: string;
@@ -419,16 +454,16 @@ export interface Bill {
     campaign_code?: string;
     created_by?: string; // UUID
     approved_by?: string; // UUID
-    created_at?: string; // TIMESTAMP
-    updated_at?: string; // TIMESTAMP
+    created_at: string; // TIMESTAMP
+    updated_at: string; // TIMESTAMP
     financial_year?: string;
     collection_center_id?: string; // UUID
     is_home_collection?: boolean;
     collection_address?: string;
     collection_charges?: number;
     referring_doctor_id?: string; // UUID
-    patient: Patient;
-    doctor: Doctor;
+    patient?: Patient;
+    doctor?: Doctor;
     tests: Test[];
     reportStatus: ReportStatus;
     paymentMethod: string;

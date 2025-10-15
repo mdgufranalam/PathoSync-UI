@@ -26,11 +26,16 @@ import {
   Filter
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Role, User, FilterTemplate } from '../types/index';
+import { User, FilterTemplate } from '../types/index';
 import { PermissionDisplay, PermissionCheckboxes } from './PermissionDisplay';
 import { useAuthContext } from '../contexts/AuthContext';
 import { PermissionGate } from './PermissionGate';
 import { Progress } from './ui/progress';
+
+interface Role {
+    id: string;
+    name: string;
+}
 
 // ... (interface definitions)
 
@@ -56,10 +61,10 @@ export function UserManagement() {
     fetchUsers();
     fetchRoles();
     fetchFilterTemplates();
-  }, [filters]);
+  }, [filters, searchTerm]);
 
   const fetchUsers = async () => {
-    const response = await apiClient.get('/users', { params: { ...filters, search: searchTerm } });
+    const response = await apiClient.get('/users', { ...filters, search: searchTerm });
     if(response.success) {
       setUsers(response.data as User[]);
     }
@@ -73,7 +78,7 @@ export function UserManagement() {
   };
 
   const fetchFilterTemplates = async () => {
-    const response = await apiClient..get('/filter-templates');
+    const response = await apiClient.get('/filter-templates');
     if(response.success) {
       setFilterTemplates(response.data as FilterTemplate[]);
     }

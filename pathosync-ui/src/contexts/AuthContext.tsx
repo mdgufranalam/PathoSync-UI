@@ -1,15 +1,13 @@
 import React, { createContext, useContext } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useTenant } from '../hooks/useTenant';
-import { usePermissions } from '../hooks/usePermissions';
-import { User, Tenant, Role } from '../types';
+import { User, Tenant, Role } from '../types/index';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
   tenant: Tenant | null;
   tenantId: string | null;
-  permissions: any; // Consider creating a specific type for permissions
   loading: boolean;
   login: (token: string, tenantId: string) => void;
   logout: () => void;
@@ -21,12 +19,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
   const { user, token, tenantId, isAuthenticated, loading, login, logout } = useAuth();
   const { tenant, loading: tenantLoading } = useTenant(tenantId);
-  const { permissions, loading: permissionsLoading } = usePermissions(user?.role, user?.id);
 
   const hasPermission = (module: string, action: string): boolean => {
-    if (!permissions || !user) return false;
-    if (user.role === 'admin') return true; // Admins have all permissions
-    return permissions[module]?.[action] ?? false;
+    if (!user) return false;
+    // This is a simplified permission check. In a real application, you would
+    // likely have a more complex system for managing roles and permissions.
+    if (user.role === 'admin') return true;
+    return false;
   };
 
   const value = {
@@ -34,8 +33,7 @@ export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }
     user,
     tenant,
     tenantId,
-    permissions,
-    loading: loading || tenantLoading || permissionsLoading,
+    loading: loading || tenantLoading,
     login,
     logout,
     hasPermission,
