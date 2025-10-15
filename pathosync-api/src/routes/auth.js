@@ -37,7 +37,7 @@ router.post('/login', async (req, res) => {
 
   try {
     // Check if user exists
-    const userRes = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    const userRes = await db.query('select u.id as id,u.email,u.tenant_id,u.password_hash,r.id,r.name as role from Users u left join roles r on u.role_id=r.id WHERE u.email = $1', [email]);
     if (userRes.rows.length === 0) {
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
