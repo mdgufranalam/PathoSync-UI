@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { BillsProvider } from './hooks/useBills';
 import { ThemeProvider } from './hooks/useTheme';
@@ -25,20 +25,17 @@ import { CollectionCentersManagement } from './components/CollectionCentersManag
 import { UpgradePlan } from './components/UpgradePlan';
 import { ThemeToggle } from './components/ThemeToggle';
 import SaaSPortal from './components/SaaSPortal';
-import { SupabaseAuthService } from './services/auth';
 import type { User, Page, Role } from './types/index';
 import { Button } from './components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './components/ui/dropdown-menu';
 import { Menu, User as UserIcon } from 'lucide-react';
 import { Toaster } from './components/ui/sonner';
 import { usePermissions } from './hooks/usePermissions';
-import { Permissions } from './types/permissions';
 
 function AppContent() {
     const [currentPage, setCurrentPage] = useState<Page>('login');
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const { currentUser, login, logout } = useAuth();
-    const authService = useMemo(() => new SupabaseAuthService(), []);
 
     const { permissions } = usePermissions({ userRole: currentUser?.role as Role, userId: currentUser?.id as string });
 
@@ -49,38 +46,26 @@ function AppContent() {
             return;
         }
 
-        const { data: authListener } = authService.onAuthStateChange((_event, session) => {
-            if (session) {
-                setCurrentPage('dashboard');
-            } else {
-                setCurrentPage('login');
-            }
-        });
-
-        return () => {
-            authListener.subscription.unsubscribe();
-        };
-    }, [authService]);
+        if (currentUser) {
+            setCurrentPage('dashboard');
+        } else {
+            setCurrentPage('login');
+        }
+    }, [currentUser]);
 
     const handleLogin = async (email: string, password: string) => {
         try {
             await login(email, password);
-            setCurrentPage('dashboard');
         } catch (error) {
             console.error('Login failed:', error);
         }
     };
 
-    const handleLogout = async () => {
-        try {
-            await logout();
-            setCurrentPage('login');
-        } catch (error) {
-            console.error('Logout failed:', error);
-        }
+    const handleLogout = () => {
+        logout();
     };
 
-    const onNavigate = (page: Page) => setCurrentPage(page);
+    const onNavigate = (page: string) => setCurrentPage(page as Page);
 
     const renderPage = () => {
         const path = window.location.pathname;

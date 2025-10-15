@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Bill } from '../types/index';
-import { getBills, addBill as apiAddBill, updateBill as apiUpdateBill, deleteBill as apiDeleteBill } from '../utils/api';
+import { apiClient } from '../utils/apiClient';
 import { toast } from 'sonner';
 
 interface BillsContextType {
@@ -20,30 +20,39 @@ export function BillsProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const fetchBills = async () => {
-            try {
-                setLoading(true);
-                const fetchedBills = await getBills();
-                setBills(fetchedBills as Bill[]);
-                setError(null);
-            } catch (err) {
-                console.error('Error fetching bills:', err);
-                setError('Failed to load bills. Please try again later.');
-                toast.error('Failed to load bills.');
-            } finally {
-                setLoading(false);
+    const fetchBills = useCallback(async () => {
+        try {
+            setLoading(true);
+            const response = await apiClient.get<Bill[]>('/billing');
+            if (response.success && response.data) {
+                setBills(response.data);
+            } else {
+                setError(response.error || 'Failed to load bills.');
+                toast.error(response.error || 'Failed to load bills.');
             }
-        };
-
-        fetchBills();
+        } catch (err) {
+            console.error('Error fetching bills:', err);
+            setError('Failed to load bills. Please try again later.');
+            toast.error('Failed to load bills.');
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchBills();
+    }, [fetchBills]);
 
     const addBill = async (bill: Omit<Bill, 'id'>) => {
         try {
-            const newBill = await apiAddBill(bill);
-            setBills(prev => [...prev, newBill as Bill]);
-            toast.success('Bill added successfully!');
+            const response = await apiClient.post<Bill>('/billing', bill);
+            if (response.success && response.data) {
+                setBills(prev => [...prev, response.data!]);
+                toast.success('Bill added successfully!');
+            }
+            else {
+                toast.error(response.error || 'Failed to add bill.');
+            }
         } catch (err) {
             console.error('Error adding bill:', err);
             toast.error('Failed to add bill.');
@@ -51,18 +60,15 @@ export function BillsProvider({ children }: { children: ReactNode }) {
     };
 
     const updateBill = async (id: string, updates: Partial<Bill>) => {
-        const billToUpdate = bills.find(b => b.id === id);
-        if (!billToUpdate) {
-            toast.error('Bill not found');
-            return;
-        }
-        
-        const updatedBillData = { ...billToUpdate, ...updates };
-
         try {
-            const updatedBill = await apiUpdateBill(updatedBillData);
-            setBills(prev => prev.map(bill => (bill.id === id ? updatedBill as Bill : bill)));
-            toast.success('Bill updated successfully!');
+            const response = await apiClient.put<Bill>(`/billing/${id}`, updates);
+            if (response.success && response.data) {
+                setBills(prev => prev.map(bill => (bill.id === id ? response.data! : bill)));
+                toast.success('Bill updated successfully!');
+            }
+            else {
+                toast.error(response.error || 'Failed to update bill.');
+            }
         } catch (err) {
             console.error('Error updating bill:', err);
             toast.error('Failed to update bill.');
@@ -75,9 +81,14 @@ export function BillsProvider({ children }: { children: ReactNode }) {
 
     const deleteBill = async (id: string) => {
         try {
-            await apiDeleteBill(id);
-            setBills(prev => prev.filter(bill => bill.id !== id));
-            toast.success('Bill deleted successfully!');
+            const response = await apiClient.delete<void>(`/billing/${id}`);
+            if (response.success) {
+                setBills(prev => prev.filter(bill => bill.id !== id));
+                toast.success('Bill deleted successfully!');
+            }
+            else {
+                toast.error(response.error || 'Failed to delete bill.');
+            }
         } catch (err) {
             console.error('Error deleting bill:', err);
             toast.error('Failed to delete bill.');

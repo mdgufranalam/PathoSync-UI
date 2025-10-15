@@ -1,28 +1,34 @@
+const jwt = require('jsonwebtoken');
 const db = require('../db');
 
 const authenticate = async (req, res, next) => {
-  const userId = req.headers['x-user-id'];
-  const tenantId = req.headers['x-tenant-id'];
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
 
-  if (!userId || !tenantId) {
-    return res.status(401).json({ error: "Unauthorized: 'x-user-id' and 'x-tenant-id' headers are required." });
+  if (token == null) {
+    return res.status(401).json({ error: 'Unauthorized: No token provided.' });
   }
 
-  try {
-    const { rows } = await db.query('SELECT id, role_id FROM users WHERE id = $1 AND tenant_id = $2', [userId, tenantId]);
-    if (rows.length === 0) {
-      return res.status(401).json({ error: 'Unauthorized: User not found.' });
+  jwt.verify(token, process.env.JWT_SECRET, async (err, data ) => {
+    if (err) {
+      return res.status(403).json({ error: 'Forbidden: Invalid token.' });
     }
-    req.user = {
-      id: rows[0].id,
-      role_id:rows[0].role_id,
-      tenant_id: tenantId
-    };
-    next();
-  } catch (err) {
-    console.error('Error during authentication middleware:', err.message);
-    res.status(500).send('Server error during authentication.');
-  }
+    try {
+      const { rows } = await db.query('SELECT id, role_id, tenant_id FROM users WHERE id = $1', [data.user.id]);
+      if (rows.length === 0) {
+        return res.status(401).json({ error: 'Unauthorized: User not found.'+user.userId });
+      }
+      req.user = {
+        id: rows[0].id,
+        role_id: rows[0].role_id,
+        tenant_id: rows[0].tenant_id
+      };
+      next();
+    } catch (dbErr) {
+      console.error('Error during authentication middleware:', dbErr.message);
+      res.status(500).send('Server error during authentication.');
+    }
+  });
 };
 
 const checkPermission = (module, action) => {

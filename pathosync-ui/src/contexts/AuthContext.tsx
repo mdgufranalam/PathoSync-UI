@@ -1,58 +1,53 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { apiClient } from '../utils/apiClient';
+import React, { createContext, useContext } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { useTenant } from '../hooks/useTenant';
+import { usePermissions } from '../hooks/usePermissions';
+import { User, Tenant, Role } from '../types';
 
 interface AuthContextType {
-  user: any;
-  permissions: any[];
+  isAuthenticated: boolean;
+  user: User | null;
+  tenant: Tenant | null;
+  tenantId: string | null;
+  permissions: any; // Consider creating a specific type for permissions
+  loading: boolean;
+  login: (token: string, tenantId: string) => void;
+  logout: () => void;
   hasPermission: (module: string, action: string) => boolean;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState(null);
-  const [permissions, setPermissions] = useState([]);
+export const AuthProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
+  const { user, token, tenantId, isAuthenticated, loading, login, logout } = useAuth();
+  const { tenant, loading: tenantLoading } = useTenant(tenantId);
+  const { permissions, loading: permissionsLoading } = usePermissions(user?.role as Role, user?.id);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const userResponse = await apiClient.get('/auth/me');
-        setUser(userResponse.data);
-
-        if (userResponse.data && userResponse.data.role_id) {
-          const permissionsResponse = await apiClient.get(`/roles/${userResponse.data.role_id}/permissions`);
-          setPermissions(permissionsResponse.data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch user data', error);
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
-  const hasPermission = (module: string, action: string) => {
-    // Admins have all permissions
-    if (user?.role?.name === 'Admin') {
-      return true;
-    }
-
-    // Check role-based permissions
-    const rolePermission = permissions.find(p => p.module === module && p.action === action);
-    if (rolePermission) {
-      return true;
-    }
-
-    // Check for user-specific overrides (not implemented in this example)
-
-    return false;
+  const hasPermission = (module: string, action: string): boolean => {
+    if (!permissions) return false;
+    if (user?.role === 'admin') return true; // Admins have all permissions
+    return permissions[module]?.[action] ?? false;
   };
 
   const value = {
+    isAuthenticated,
     user,
+    tenant,
+    tenantId,
     permissions,
-    hasPermission
+    loading: loading || tenantLoading || permissionsLoading,
+    login,
+    logout,
+    hasPermission,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
+};
+
+export const useAuthContext = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuthContext must be used within an AuthProvider');
+  }
+  return context;
+};

@@ -1,6 +1,6 @@
-export type Page = 'dashboard' | 'patients' | 'tests' | 'reports' | 'billing' | 'users' | 'settings' | 'getting-started' | 'subscription' | 'login' | 'signup' | 'password-reset' | 'enhanced-billing' | 'bills' | 'packages' | 'profile' | 'statistics' | 'notifications' | 'collection-centers' | 'upgrade-plan' | 'saas-portal';
+export type Page = 'dashboard' | 'patients' |'doctors' | 'tests' | 'reports' | 'billing' | 'users' | 'settings' | 'getting-started' | 'subscription' | 'login' | 'signup' | 'password-reset' | 'enhanced-billing' | 'bills' | 'packages' | 'profile' | 'statistics' | 'notifications' | 'collection-centers' | 'upgrade-plan' | 'saas-portal';
 
-export type Role = 'admin' | 'manager' | 'technician' | 'collection-agent' | 'data-entry' | 'viewer';
+export type Role = 'admin' | 'manager' | 'technician' | 'collection-agent' | 'data-entry' | 'viewer'|'superadmin';
 
 export interface SubscriptionPlan {
     id: string; // UUID

@@ -1,43 +1,42 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '../utils/apiClient';
-import type { Role, Permissions } from '../types/permissions';
+import type { Role } from '../types/index';
 
-const initialPermissions: Permissions = {
-    billing: { canView: false, canEdit: false },
-    bills: { canView: false, canEdit: false },
-    patients: { canView: false, canEdit: false },
-    packages: { canView: false, canEdit: false },
-    reports: { canView: false, canEdit: false },
-    tests: { canView: false, canEdit: false },
-    doctors: { canView: false, canEdit: false },
-    users: { canView: false, canEdit: false },
-    statistics: { canView: false, canEdit: false },
-    subscription: { canView: false, canEdit: false },
-    collectionCenters: { canView: false, canEdit: false },
-};
+export interface Permissions {
+    [module: string]: {
+        [action: string]: boolean;
+    };
+}
 
-export const usePermissions = ({ userRole, userId }: { userRole: Role, userId: string }) => {
-    const [permissions, setPermissions] = useState<Permissions>(initialPermissions);
+export const usePermissions = (role: Role, userId: string) => {
+    const [permissions, setPermissions] = useState<Permissions>({});
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchPermissions = async () => {
-            if (userRole && userId) {
-                try {
-                    setLoading(true);
-                    const response = await apiClient.get(`/users/${userId}/permissions`);
+            if (!role || !userId) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                const response = await apiClient.get<Permissions>('/permissions', { role, userId });
+                if (response.success && response.data) {
                     setPermissions(response.data);
-                } catch (err) {
-                    setError(err as Error);
-                } finally {
-                    setLoading(false);
+                } else {
+                    setError(response.error || 'Failed to fetch permissions');
                 }
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'An unknown error occurred');
+            } finally {
+                setLoading(false);
             }
         };
 
         fetchPermissions();
-    }, [userRole, userId]);
+    }, [role, userId]);
 
     return { permissions, loading, error };
 };

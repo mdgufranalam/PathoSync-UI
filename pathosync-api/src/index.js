@@ -53,7 +53,7 @@ app.use('/api/doctors', doctorsRouter);
 app.use('/api/tests', testsRouter);
 app.use('/api/reports', reportsRouter);
 app.use('/api/public/reports', publicReportsRouter);
-app.use('./api/billing', billingRouter);
+app.use('/api/billing', billingRouter);
 app.use('/api/subscription-plans', subscriptionPlansRouter);
 app.use('/api/test-categories', testCategoriesRouter);
 app.use('/api/test-parameters', testParametersRouter);
